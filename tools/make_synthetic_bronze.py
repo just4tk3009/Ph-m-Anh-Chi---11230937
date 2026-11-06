@@ -39,18 +39,21 @@ def main() -> None:
     a = ap.parse_args()
     rng = np.random.default_rng(a.seed)
     bronze = Path(a.data_dir) / "bronze"
-    qs = quarters(2001, 2024)
+    qs = quarters(1984, 2025)
     certs = np.arange(10001, 10001 + a.banks)
     fail_q = {}
     for c in rng.choice(certs, size=max(4, a.banks // 15), replace=False):
-        qi = int(rng.integers(20, len(qs) - 2))
+        qi = int(rng.integers(8, len(qs) - 2))
         fail_q[int(c)] = qi
+    others = [int(c) for c in certs if int(c) not in fail_q]
+    merge_q = {c: int(rng.integers(8, len(qs) - 2))
+               for c in rng.choice(others, size=max(4, a.banks // 8), replace=False).tolist()}
     manifest = []
     for qi, q in enumerate(qs):
         rows = []
         for c in certs:
             c = int(c)
-            if c in fail_q and qi >= fail_q[c]:
+            if (c in fail_q and qi >= fail_q[c]) or (c in merge_q and qi > merge_q[c]):
                 continue
             stress = 0.0
             if c in fail_q and fail_q[c] - qi <= 6:
@@ -83,7 +86,7 @@ def main() -> None:
                 r["NCLNLS"] = None                    # nulls inside rolling windows
             if rng.random() < 0.01:
                 r["EQ"] = None
-            if q.year < 2005:
+            if q.year < 1991:
                 r["P3ASSET"] = None                   # structural missing (form change)
             if stress > 0 and rng.random() < 0.3:
                 r["ORE"] = None                       # informative missing
@@ -98,8 +101,12 @@ def main() -> None:
                          "completed_at": "2026-11-06T00:00:00Z"})
     inst = [{"CERT": int(c), "NAME": f"Synthetic Bank {c}", "CITY": "Testville",
              "STALP": str(rng.choice(["GA", "FL", "IL", "CA", "TX"])), "BKCLASS": "NM",
-             "REGAGNT": "FDIC", "ESTYMD": "01/01/1990", "ACTIVE": 0 if int(c) in fail_q else 1,
-             "ENDEFYMD": "12/31/9999"} for c in certs]
+             "REGAGNT": "FDIC", "ESTYMD": "01/01/1970", "ACTIVE": 0 if int(c) in fail_q else 1,
+             "ENDEFYMD": "12/31/9999", "STNAME": "Georgia", "INSDATE": "01/01/1970",
+             "CHANGEC1": 0} for c in certs]
+    for r in inst:                                   # mergers: inactive, not failures
+        if r["CERT"] in merge_q:
+            r["ACTIVE"], r["CHANGEC1"] = 0, 223
     dump(bronze / "institutions" / "page_0000.json.gz", inst)
     fails = [{"CERT": c, "NAME": f"Synthetic Bank {c}", "CITYST": "TESTVILLE, GA",
               "FAILDATE": f"{qs[qi].month - 1}/15/{qs[qi].year}", "FAILYR": qs[qi].year,

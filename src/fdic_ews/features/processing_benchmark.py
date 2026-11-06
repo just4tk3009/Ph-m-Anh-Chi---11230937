@@ -202,6 +202,7 @@ def run_processing_benchmark(cfg: dict[str, Any]) -> pl.DataFrame:
         "with Polars lazy (0 = identical results).\n\n" + md_table(summ.to_dicts()),
         encoding="utf-8")
     _plot(summ, paths)
+    write_execution_plans(cfg)
     return summ
 
 
@@ -231,3 +232,32 @@ def _plot(summ: pl.DataFrame, paths: Paths) -> None:
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--worker":
         print(json.dumps(_worker(json.loads(sys.argv[2]))))
+
+
+def write_execution_plans(cfg: dict[str, Any]) -> None:
+    """Part 3: save the Polars (naive vs optimised) and Spark (formatted) plans of the
+    benchmark workload so the report can explain how each engine executes it."""
+    import contextlib
+    import io
+
+    from . import engines
+    paths: Paths = cfg["_paths"]
+    path = str(paths.silver / "financials.parquet")
+    lf = engines._polars_plan(pl.scan_parquet(path).select(engines.READ_COLS))
+    (paths.tables / "plan_polars_naive.txt").write_text(lf.explain(optimized=False),
+                                                        encoding="utf-8")
+    (paths.tables / "plan_polars_optimized.txt").write_text(lf.explain(), encoding="utf-8")
+    if not _engine_available("pyspark"):
+        return
+    b = cfg.get("processing_benchmark", {})
+    try:
+        spark = engines.spark_session(b.get("spark_driver_memory", "4g"),
+                                      int(b.get("spark_shuffle_partitions", 8)))
+        sdf = engines.spark_plan(spark.read.parquet(path).select(*engines.READ_COLS))
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sdf.explain(mode="formatted")
+        (paths.tables / "plan_spark_formatted.txt").write_text(buf.getvalue(), encoding="utf-8")
+        spark.stop()
+    except Exception as err:  # noqa: BLE001 - plan output is optional evidence
+        log.warning("could not write the Spark plan: %s", err)

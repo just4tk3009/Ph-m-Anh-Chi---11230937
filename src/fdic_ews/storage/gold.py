@@ -40,8 +40,10 @@ KEY_COLS = ["cert", "repdte"]
 # Information that is only known in the future relative to repdte. Never a feature.
 LEAKY_COLUMNS = {"faildate", "failyr", "failed_ever", "quarters_to_failure", "active",
                  "endefymd", "restype", "restype1", "cost", "qbfasset", "qbfdep",
-                 "label_observable", "available_date", "fail_name"}
-META_COLS = {"repyear", "_bronze_file", "_silver_built_at", "name", "city"}
+                 "label_observable", "available_date", "fail_name", "changec1",
+                 "exit_type", "last_repdte", "is_last_report"}
+META_COLS = {"repyear", "_bronze_file", "_silver_built_at", "name", "city", "stname",
+             "insdate"}
 
 
 def target_name(h: int) -> str:
@@ -70,7 +72,7 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
     inst_cols = set(pl.read_parquet_schema(paths.silver / "institutions.parquet"))
     inst = (pl.scan_parquet(paths.silver / "institutions.parquet")
             .select([c for c in ("cert", "stalp", "bkclass", "regagnt", "estymd", "active",
-                                 "endefymd") if c in inst_cols]))
+                                 "endefymd", "changec1") if c in inst_cols]))
     fail = (pl.scan_parquet(paths.silver / "failures.parquet")
             .select("cert", "faildate", pl.col("name").alias("fail_name"))
             .filter(pl.col("faildate").is_not_null()))
@@ -113,6 +115,8 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
             .sort(["repdte", "cert"])
             .collect())
 
+    gold, exit_stats = classify_exits(paths, gold)
+
     out = paths.gold / "bank_quarter_panel"
     if out.exists():
         shutil.rmtree(out) if out.is_dir() else out.unlink()
@@ -141,10 +145,70 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
              "failed_banks_in_panel": int(gold.filter(pl.col("failed_ever") == 1)["cert"].n_unique()),
              "post_failure_rows_dropped": int(n_post_fail),
              "failure_list_asof": str(asof),
-             "censored_rows": int((~gold["label_observable"]).sum())}
+             "censored_rows": int((~gold["label_observable"]).sum()),
+             "exits": exit_stats}
     write_json(paths.gold / "_gold_build_stats.json", stats)
     log.info("gold: %s", stats)
     return stats
+
+
+def classify_exits(paths: Paths, gold: pl.DataFrame) -> tuple[pl.DataFrame, dict[str, Any]]:
+    """Why did each bank stop reporting? (exam Part 2: failure vs. other exits)
+
+    exit_type per CERT:
+      failure                  - in the FDIC failures list with RESTYPE = FAILURE
+      merger_or_other_exit     - stopped reporting, inactive, not a failure (mergers,
+                                 voluntary liquidations, charter changes; CHANGEC1 code kept)
+      active                   - still reporting in the last quarter of the panel
+      stopped_unexplained      - stopped reporting but flagged active and not failed
+    Only ``failure`` creates positive labels; a merger is a 0 (exam section 2.3).
+    The columns are LEAKY (they describe the future) and never used as features.
+    """
+    max_q = gold["repdte"].max()
+    last = gold.group_by("cert").agg(last_repdte=pl.col("repdte").max(),
+                                     first_repdte=pl.col("repdte").min())
+    inst_info = gold.group_by("cert").agg(
+        [pl.col(c).first() for c in ("active", "changec1", "faildate") if c in gold.columns])
+    per_bank = last.join(inst_info, on="cert", how="left")
+    has_active = "active" in per_bank.columns
+    per_bank = per_bank.with_columns(exit_type=(
+        pl.when(pl.col("faildate").is_not_null()).then(pl.lit("failure"))
+        .when(pl.col("last_repdte") == max_q).then(pl.lit("active"))
+        .when((pl.col("active") == 0) if has_active else pl.lit(True))
+        .then(pl.lit("merger_or_other_exit"))
+        .otherwise(pl.lit("stopped_unexplained"))))
+    per_bank = per_bank.with_columns(
+        quarters_last_report_to_failure=pl.when(pl.col("exit_type") == "failure").then(
+            (pl.col("faildate").dt.year() - pl.col("last_repdte").dt.year()) * 4
+            + pl.col("faildate").dt.quarter() - pl.col("last_repdte").dt.quarter()))
+    (per_bank.with_columns(exit_decade=(pl.col("last_repdte").dt.year() // 10) * 10)
+     .group_by("exit_type", "exit_decade").agg(banks=pl.len()).sort("exit_type", "exit_decade")
+     .write_csv(paths.tables / "gold_exit_types.csv"))
+    if "changec1" in per_bank.columns:
+        (per_bank.filter(pl.col("exit_type") != "active")
+         .group_by("exit_type", "changec1").agg(banks=pl.len())
+         .sort("exit_type", "banks", descending=[False, True])
+         .write_csv(paths.tables / "gold_exit_changec1_codes.csv"))
+    (per_bank.filter(pl.col("exit_type") == "failure")
+     .group_by("quarters_last_report_to_failure").agg(banks=pl.len())
+     .sort("quarters_last_report_to_failure")
+     .write_csv(paths.tables / "gold_failure_report_gap.csv"))
+
+    fails = pl.read_parquet(paths.silver / "failures.parquet")
+    min_q = gold["repdte"].min()
+    in_scope = fails.filter(pl.col("faildate") > min_q)
+    matched = in_scope.join(last.select("cert"), on="cert", how="semi").height
+    gold = gold.join(per_bank.select("cert", "last_repdte", "exit_type"), on="cert", how="left") \
+        .with_columns(is_last_report=(pl.col("repdte") == pl.col("last_repdte")))
+    counts = dict(per_bank.group_by("exit_type").agg(pl.len()).iter_rows())
+    stats = {"banks_by_exit_type": counts,
+             "failures_in_list_after_panel_start": in_scope.height,
+             "failures_matched_to_panel": matched,
+             "failures_not_in_panel": in_scope.height - matched,
+             "failed_banks_last_report_gt_4q_before_failure": int(per_bank.filter(
+                 pl.col("quarters_last_report_to_failure") > 4).height)}
+    log.info("exits: %s", stats)
+    return gold, stats
 
 
 def read_gold(cfg: dict[str, Any], lazy: bool = True) -> pl.LazyFrame | pl.DataFrame:

@@ -17,8 +17,8 @@ api:
   sleep_between_requests_s: 0.25   # politeness delay between pages
 
 ingestion:
-  start_quarter: 2001Q1
-  end_quarter: 2025Q2
+  start_quarter: 1984Q1          # exam scope: all banks 1984Q1 -> 2026Q2 (~1.68M rows)
+  end_quarter: 2026Q2
   # Call Report variables (FDIC BankFind "financials" endpoint).
   # Amounts are in THOUSANDS of USD. Income items (NETINC, INTINC, EINTEXP,
   # NONII, NONIX, ELNATR, NTLNLS) are YEAR-TO-DATE cumulative values.
@@ -27,6 +27,7 @@ ingestion:
   financial_fields:
     - CERT       # FDIC certificate number (bank id)
     - REPDTE     # report date (quarter end, YYYYMMDD)
+    - STNAME     # state name (point-in-time location of the bank)
     - ASSET      # total assets
     - DEP        # total deposits
     - DEPDOM     # domestic deposits
@@ -34,6 +35,9 @@ ingestion:
     - LNLSGR     # gross loans and leases
     - LNLSNET    # net loans and leases
     - LNATRES    # allowance for loan and lease losses
+    - LNRE       # real-estate loans
+    - LNCI       # commercial and industrial loans
+    - LNCON      # consumer loans
     - NCLNLS     # noncurrent loans and leases (90+ days past due + nonaccrual)
     - P3ASSET    # assets 30-89 days past due
     - P9ASSET    # assets 90+ days past due
@@ -59,11 +63,14 @@ ingestion:
     - NAME
     - CITY
     - STALP      # state abbreviation
+    - STNAME     # state name
     - BKCLASS    # charter class
     - REGAGNT    # primary regulator
     - ESTYMD     # establishment date
     - ACTIVE     # LEAKY: 0/1 status as of download date (future information)
     - ENDEFYMD   # LEAKY: end date of the institution (future information)
+    - CHANGEC1   # LEAKY: code of the structural change that ended reporting (merger, ...)
+    - INSDATE    # date of deposit insurance
   failure_fields:
     - CERT
     - NAME
@@ -82,11 +89,16 @@ gold:
   publication_lag_days: 60      # report is publicly usable ~60 days after REPDTE
   gold_format: delta            # delta | parquet
 
-split:                          # temporal split, all dates inclusive
-  train_start: 2001-03-31
-  train_end: 2012-12-31
-  valid_end: 2015-12-31
-  test_end: 2024-12-31
+split:                          # temporal split, all dates inclusive (exam section 2.3)
+  # DEVELOPMENT = train + valid = 1984Q1-2007Q4 (S&L / early-1990s crisis).
+  # GAP 2008Q1-2008Q4 (>= 4 quarters, required). TEST = 2009Q1-2025Q2 (GFC + 2023),
+  # which holds far more than the required 50 failures. Modelling stops at 2025Q2
+  # because later labels are incomplete. Tuning / selection / threshold use DEV only.
+  train_start: 1984-03-31
+  train_end: 1992-12-31         # inner fitting window inside development
+  valid_end: 2007-12-31         # validation window 1993-2007 (end of development)
+  test_start: 2009-03-31        # first test quarter (gap after valid_end >= 4 quarters)
+  test_end: 2025-06-30          # last quarter with a complete 4-quarter label
   purge_horizon: true           # drop rows whose label window crosses a boundary
 
 quality:
@@ -107,3 +119,19 @@ processing_benchmark:           # Module 3: same workload in four engines
   repeats: 3
   spark_driver_memory: 4g
   spark_shuffle_partitions: 8   # Spark default 200 is tuned for clusters, not one laptop
+
+selection:                      # Module 4 funnel (all fitted on the train window)
+  f_test_alpha: 0.001
+  max_abs_spearman: 0.85        # collinearity threshold for pruning
+  inner_fold_years: [1987, 1988, 1989, 1990, 1991]   # expanding windows: train <= Y, validate Y+1
+  l1_C_grid: [0.001, 0.01, 0.1, 1.0]
+  min_fold_share: 0.5           # stability selection: kept if selected in >= 50% of folds
+  neg_sample_rate: 0.25         # speed: all positives + 25% of negatives for model fits
+  mi_neg_sample_rate: 0.10      # mutual information is O(n log n) per feature
+  perm_repeats: 5
+  min_features: 5
+
+freedman:                       # Module 4 simulation on pure noise
+  grid: [[50, 200], [200, 200], [1000, 200]]
+  k: 10
+  reps: 200

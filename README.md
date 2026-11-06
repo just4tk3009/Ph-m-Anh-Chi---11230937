@@ -10,9 +10,13 @@ FDIC BankFind API → **Bronze** (raw JSON) → **Silver** (typed, deduplicated 
 CAMELS features (Polars, PySpark demo) → leakage-safe feature selection →
 imbalanced early-warning model.
 
-> Status: Modules 1-3 implemented (ingestion, storage + benchmark, data quality,
-> anti-leakage preprocessing, CAMELS features, Pandas/Polars/PySpark benchmark).
-> Modules 4-6 follow `docs/ROADMAP.md`. Measured results are in `reports/`.
+> Scope (exam section 2.2): Financials for all banks 1984Q1-2026Q2 plus the complete
+> Failures and Institutions tables. Development period 1984Q1-2007Q4, gap 2008, test
+> period 2009Q1-2025Q2 (see `config/config.yaml`, `reports/tables/report_page1_facts.md`).
+>
+> Status: Parts 1-4 implemented (acquisition, storage + benchmark, data quality and exits,
+> Polars/Pandas/PySpark processing with execution plans, leak-free features and selection).
+> Part 5 (models, MLlib demo, cost-based threshold) follows `docs/ROADMAP.md`.
 
 ## Repository layout
 
@@ -31,7 +35,11 @@ src/fdic_ews/
   quality/leakage_checks.py empirical proof that preprocessing never sees test data
   features/camels.py        50 CAMELS + dynamic features, Polars Lazy, look-ahead check
   features/engines.py       one workload in Pandas / Polars eager / Polars lazy / PySpark
-  features/processing_benchmark.py  time + peak memory (incl. Spark JVM) + result equality
+  features/processing_benchmark.py  time + peak memory (incl. Spark JVM) + result equality,
+                            Polars naive/optimised plans and Spark formatted plan
+  selection/funnel.py       variance -> F-test/MI + collinearity -> L1 stability -> permutation
+  selection/freedman.py     simulation: feature selection before vs inside CV
+  reporting/facts.py        page-1 facts (download date, rows, periods, failures)
 tools/make_synthetic_bronze.py  SYNTHETIC data for smoke tests only (never reported)
 tests/                      pytest suite (runs offline on synthetic data)
 notebooks/colab_modules_1_2.ipynb  run everything on Google Colab
@@ -66,6 +74,14 @@ to re-download.
 
 Silver deliberately does **not** impute or clip: those steps learn parameters and are
 fitted later on the training window only (`quality/preprocessing.py`).
+
+## Exits (failure vs. other exits)
+
+`gold.classify_exits` labels every bank's exit as `failure` (FDIC failures list,
+RESTYPE = FAILURE), `merger_or_other_exit` (inactive, not failed; CHANGEC1 code kept),
+`active`, or `stopped_unexplained`. Open-bank assistance transactions are excluded from the
+label. Only failures create positive labels; mergers are 0. Tables: `gold_exit_types.csv`,
+`gold_exit_changec1_codes.csv`, `gold_failure_report_gap.csv`.
 
 ## Leakage controls implemented so far
 

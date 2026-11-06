@@ -70,8 +70,11 @@ def test_split_is_purged_and_ordered(synthetic_cfg):
     g = read_gold(synthetic_cfg, lazy=False)
     s = temporal_split(g, synthetic_cfg)
     assert_no_temporal_overlap(s, 4)
-    purged = {r["split"]: r["rows_purged"] for r in s.stats}
-    assert purged["train"] > 0 and purged["valid"] > 0
+    st = {r["split"]: r for r in s.stats}
+    assert st["train"]["rows_purged"] > 0          # train labels may not reach the valid period
+    # valid labels may use the >= 4-quarter gap but never the test period
+    assert st["valid"]["max_label_window_end"] < st["test"]["from"]
+    assert s.test["repdte"].min().isoformat() >= str(synthetic_cfg["split"]["test_start"])
 
 
 def test_audit_and_leakage_run(synthetic_cfg):

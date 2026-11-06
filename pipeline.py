@@ -12,6 +12,9 @@ python pipeline.py audit                                # data-quality audit tab
 python pipeline.py leakage                              # anti-leakage verification
 python pipeline.py features                             # Module 3: CAMELS features (Polars lazy)
 python pipeline.py bench3                               # Module 3: Pandas vs Polars vs PySpark
+python pipeline.py select                               # Module 4: feature-selection funnel
+python pipeline.py freedman                             # Module 4: Freedman simulation
+python pipeline.py facts                                # page-1 facts: rows, periods, failures
 python pipeline.py all                                  # silver -> gold -> benchmark -> audit -> leakage -> features -> bench3
 
 Add ``--data-dir data_synthetic --reports-dir reports_synthetic`` to run on the
@@ -36,7 +39,7 @@ log = get_logger("cli")
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("stage", choices=["probe", "ingest", "silver", "gold", "benchmark",
-                                      "audit", "leakage", "features", "bench3", "all"])
+                                      "audit", "leakage", "features", "bench3", "select", "freedman", "facts", "all"])
     ap.add_argument("--config", default=None)
     ap.add_argument("--data-dir", default=None)
     ap.add_argument("--reports-dir", default=None)
@@ -58,7 +61,8 @@ def main(argv: list[str] | None = None) -> None:
             ingest_reference(cfg, force=a.force)
         counts = ingest_financials(cfg, a.start, a.end, force=a.force)
         log.info("downloaded %d quarters, %d rows", len(counts), sum(counts.values()))
-    stages = (["silver", "gold", "benchmark", "audit", "leakage", "features", "bench3"]
+    stages = (["silver", "gold", "benchmark", "audit", "leakage", "features", "bench3",
+               "select", "freedman", "facts"]
               if a.stage == "all" else [a.stage])
     for st in stages:
         if st == "silver":
@@ -79,6 +83,15 @@ def main(argv: list[str] | None = None) -> None:
         elif st == "bench3":
             from fdic_ews.features.processing_benchmark import run_processing_benchmark
             print(run_processing_benchmark(cfg))
+        elif st == "select":
+            from fdic_ews.selection.funnel import run_selection
+            print(json.dumps(run_selection(cfg), indent=2, default=str))
+        elif st == "freedman":
+            from fdic_ews.selection.freedman import run_freedman
+            print(run_freedman(cfg))
+        elif st == "facts":
+            from fdic_ews.reporting.facts import run_facts
+            print(json.dumps(run_facts(cfg), indent=2, default=str))
         elif st == "leakage":
             from fdic_ews.quality.leakage_checks import run_leakage_checks
             print(json.dumps(run_leakage_checks(cfg), indent=2, default=str))

@@ -13,7 +13,7 @@ validation window, and test rows must have a fully observed label window.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 import polars as pl
@@ -35,30 +35,43 @@ def _window_end(col: str, h: int) -> pl.Expr:
 
 
 def temporal_split(gold: pl.DataFrame, cfg: dict[str, Any]) -> TemporalSplit:
+    """train = [train_start, train_end], valid = (train_end, valid_end],
+    test = [test_start, test_end]. train+valid = development period.
+
+    Purging: a train label must be known by ``train_end``; a valid label must be
+    known before ``test_start`` (it may use the gap, never the test period).
+    """
     s = cfg["split"]
     h = int(cfg["gold"]["label_horizon_quarters"])
     tgt = target_name(h)
     t0, t1 = to_date(s["train_start"]), to_date(s["train_end"])
     v1, e1 = to_date(s["valid_end"]), to_date(s["test_end"])
+    ts = to_date(s["test_start"]) if s.get("test_start") else None
     purge = bool(s.get("purge_horizon", True))
+    if ts is not None:
+        gap_q = (ts.year * 4 + (ts.month - 1) // 3) - (v1.year * 4 + (v1.month - 1) // 3) - 1
+        assert gap_q >= h, f"gap between development and test is {gap_q} quarters (< {h})"
 
     df = gold.with_columns(_lw_end=_window_end("repdte", h))
-    windows: dict[str, tuple[date, date, date]] = {   # (start excl/incl, end, label must end by)
-        "train": (t0, t1, t1), "valid": (t1, v1, v1), "test": (v1, e1, e1)}
+    valid_label_by = (ts - timedelta(days=1)) if ts else v1
+    windows = {"train": (pl.col("repdte").is_between(t0, t1), t1, str(t0), str(t1)),
+               "valid": ((pl.col("repdte") > t1) & (pl.col("repdte") <= v1), valid_label_by,
+                         str(t1), str(v1)),
+               "test": (((pl.col("repdte") >= ts) if ts else (pl.col("repdte") > v1))
+                        & (pl.col("repdte") <= e1), None, str(ts or v1), str(e1))}
     out, stats = {}, []
-    for name, (lo, hi, label_by) in windows.items():
-        in_window = (pl.col("repdte") >= lo) if name == "train" else (pl.col("repdte") > lo)
-        in_window &= pl.col("repdte") <= hi
+    for name, (in_window, label_by, lo, hi) in windows.items():
         part = df.filter(in_window)
         n_window = part.height
-        if purge and name != "test":
+        if purge and label_by is not None:
             part = part.filter(pl.col("_lw_end") <= label_by)
         if name == "test" and "label_observable" in part.columns:
             part = part.filter(pl.col("label_observable"))
-        stats.append({"split": name, "from": str(lo), "to": str(hi), "rows_in_window": n_window,
+        stats.append({"split": name, "from": lo, "to": hi, "rows_in_window": n_window,
                       "rows_purged": n_window - part.height, "rows": part.height,
                       "banks": part["cert"].n_unique(),
                       "positives": int(part[tgt].sum()) if part.height else 0,
+                      "failed_banks": int(part.filter(pl.col(tgt) == 1)["cert"].n_unique()),
                       "base_rate_pct": 100 * float(part[tgt].mean()) if part.height else 0.0,
                       "max_label_window_end": str(part["_lw_end"].max()) if part.height else ""})
         out[name] = part.drop("_lw_end")
