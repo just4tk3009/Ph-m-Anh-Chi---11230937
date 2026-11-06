@@ -1,0 +1,11 @@
+{
+  "run_at": "2026-11-06T08:18:39Z",
+  "python": "3.13.18",
+  "polars": "1.35.2",
+  "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+  "cpu_count": 2,
+  "ram_gb": 12.7,
+  "repeats": 3,
+  "pandas": "2.2.3",
+  "pyspark": "4.0.5"
+}
