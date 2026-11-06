@@ -1,0 +1,48 @@
+column,dtype,null_pct,n_unique,min,max,role
+cert,Int64,0.0,11234,9,91385,key
+repdte,Date,0.0,98,2001-03-31,2025-06-30,key
+asset,Float64,0.0,415643,66.0,3788551000.0,candidate
+bro,Float64,0.25131210308701285,84257,0.0,139426000.0,candidate
+chbal,Float64,0.0,120323,-178.0,760259000.0,candidate
+dep,Float64,0.0,385114,0.0,2669161000.0,candidate
+depdom,Float64,0.0,384869,0.0,2201118000.0,candidate
+eintexp,Float64,0.25131210308701285,44565,-159000.0,74797000.0,candidate
+elnatr,Float64,0.25131210308701285,26378,-9296000.0,29395292.0,candidate
+eq,Float64,0.25131210308701285,153597,-4565197.0,322777000.0,candidate
+id,String,0.0,693162,"","",candidate
+intinc,Float64,0.25131210308701285,82125,-6563.0,169911000.0,candidate
+lnatres,Float64,0.25131210308701285,48378,-85980.0,32071000.0,candidate
+lnlsgr,Float64,0.0,351833,0.0,1427591000.0,candidate
+lnlsnet,Float64,0.0,349889,-150.0,1402682000.0,candidate
+naasset,Float64,0.0,44802,0.0,33970096.0,candidate
+nclnls,Float64,0.0,48131,0.0,65914905.0,candidate
+netinc,Float64,0.25131210308701285,53335,-24593679.0,52502000.0,candidate
+nimy,Float64,0.0,688651,-4515.151515151516,1125.0,candidate
+nonii,Float64,0.25131210308701285,46468,-1815900.0,59369000.0,candidate
+nonix,Float64,0.25131210308701285,66777,-172742.0,83084000.0,candidate
+ntlnls,Float64,0.25131210308701285,24656,-107565.0,20007000.0,candidate
+ore,Float64,0.25131210308701285,24951,-37906.0,5794000.0,candidate
+p3asset,Float64,0.0,36193,0.0,17863000.0,candidate
+p9asset,Float64,0.0,17962,0.0,42768781.0,candidate
+rbc1aaj,Float64,0.0,690108,-519.4690265486726,21370.212765957447,candidate
+rbcrwaj,Float64,0.0,651655,-2300.0,74283.33333333334,candidate
+roa,Float64,0.0,689505,-761.9047619047618,562.2716664125022,candidate
+roe,Float64,0.2791555220857462,15117,-354657.8,58436.63,candidate
+sc,Float64,0.0,207139,-215190.0,941778000.0,candidate
+_bronze_file,String,0.0,98,"","",meta
+_silver_built_at,String,0.0,1,"","",meta
+stalp,String,0.9968809600064631,57,"","",candidate
+bkclass,String,0.9968809600064631,10,"","",candidate
+regagnt,String,0.9968809600064631,6,"","",candidate
+estymd,Date,0.9968809600064631,6632,1784-01-01,2025-06-01,candidate
+active,Int64,0.9968809600064631,3,0,1,LEAKY (never a feature)
+endefymd,Date,0.9968809600064631,3008,2000-06-26,9999-12-31,LEAKY (never a feature)
+faildate,Date,96.94616842815965,269,2001-05-03,2026-07-17,LEAKY (never a feature)
+fail_name,String,96.94616842815965,554,"","",LEAKY (never a feature)
+available_date,Date,0.0,98,2001-05-30,2025-08-29,LEAKY (never a feature)
+failed_ever,Int8,0.0,2,0,1,LEAKY (never a feature)
+quarters_to_failure,Int32,96.94616842815965,103,1,102,LEAKY (never a feature)
+target_fail_4q,Int8,0.0,2,0,1,target
+label_observable,Boolean,0.0,1,"","",LEAKY (never a feature)
+bank_age_years,Float64,0.9968809600064631,59889,0.0,233.48939082819987,candidate
+repyear,Int32,0.0,25,2001,2025,meta

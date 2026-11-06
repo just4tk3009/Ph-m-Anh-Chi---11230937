@@ -68,10 +68,11 @@ DOMAIN_RULES: list[tuple[str, tuple[str, ...], pl.Expr]] = [
 def _safe_ratio_frame(df: pl.DataFrame) -> pl.DataFrame:
     exprs = [e.alias(n) for n, (req, e) in AUDIT_RATIOS.items() if set(req) <= set(df.columns)]
     out = df.select(*KEY_COLS, *[c for c in df.columns if c.startswith("target_")], *exprs)
-    # x/0 -> inf: treat as missing (denominator problem) and count separately
+    # x/0 -> inf and 0/0 -> NaN: both mean "undefined ratio" -> null. (Polars sorts NaN
+    # above every number, so a NaN left in would poison mean/std and every comparison.)
     ratio_cols = [n for n in AUDIT_RATIOS if n in out.columns]
-    return out.with_columns([pl.when(pl.col(c).is_infinite()).then(None).otherwise(pl.col(c))
-                             .alias(c) for c in ratio_cols])
+    return out.with_columns([pl.when(pl.col(c).is_infinite() | pl.col(c).is_nan())
+                             .then(None).otherwise(pl.col(c)).alias(c) for c in ratio_cols])
 
 
 def _numeric_value_cols(df: pl.DataFrame) -> list[str]:
