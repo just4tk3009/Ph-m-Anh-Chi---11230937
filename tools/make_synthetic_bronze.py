@@ -101,6 +101,11 @@ def main() -> None:
               "FAILDATE": f"{qs[qi].month - 1}/15/{qs[qi].year}", "FAILYR": qs[qi].year,
               "RESTYPE": "FAILURE", "RESTYPE1": "PA", "SAVR": "DIF", "QBFASSET": 1000.0,
               "QBFDEP": 900.0, "COST": 100.0} for c, qi in fail_q.items()]
+    survivor = int(next(c for c in certs if int(c) not in fail_q))
+    fails.append({"CERT": survivor, "NAME": "Assisted Bank", "CITYST": "TESTVILLE, GA",
+                  "FAILDATE": "6/1/1989", "FAILYR": 1989, "RESTYPE": "ASSISTANCE",
+                  "RESTYPE1": "A/A", "SAVR": "BIF", "QBFASSET": 1.0, "QBFDEP": 1.0,
+                  "COST": None})                    # open-bank assistance: NOT a failure
     dump(bronze / "failures" / "page_0000.json.gz", fails)
     for p in ("institutions", "failures"):
         manifest.append({"event": "partition_complete", "partition": p,

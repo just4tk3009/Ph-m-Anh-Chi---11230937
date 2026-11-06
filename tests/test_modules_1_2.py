@@ -60,6 +60,10 @@ def test_gold_label_definition(synthetic_cfg):
     assert (pos["quarters_to_failure"] <= 4).all()
     assert g.filter(pl.col("faildate").is_not_null() & (pl.col("repdte") >= pl.col("faildate"))).height == 0
     assert g.select(["cert", "repdte"]).is_duplicated().sum() == 0
+    # an open-bank assistance record must not remove the assisted bank's later reports
+    from fdic_ews.utils.io_utils import read_json
+    stats = read_json(synthetic_cfg["_paths"].gold / "_gold_build_stats.json")
+    assert stats["post_failure_rows_dropped"] == 0
 
 
 def test_split_is_purged_and_ordered(synthetic_cfg):

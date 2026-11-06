@@ -98,7 +98,14 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
 
     post_fail = panel.filter(pl.col("faildate").is_not_null()
                              & (pl.col("repdte") >= pl.col("faildate")))
-    n_post_fail = post_fail.select(pl.len()).collect().item()
+    post_fail_df = post_fail.select("cert", "repdte", "faildate").collect()
+    n_post_fail = post_fail_df.height
+    if n_post_fail:  # inspect: should be rare (e.g. reports filed for the failure quarter)
+        (post_fail_df.group_by("cert", "faildate")
+         .agg(rows=pl.len(), first_repdte=pl.col("repdte").min(),
+              last_repdte=pl.col("repdte").max())
+         .sort("rows", descending=True)
+         .write_csv(paths.tables / "gold_post_failure_rows.csv"))
     gold = (panel.filter(~(pl.col("faildate").is_not_null()
                            & (pl.col("repdte") >= pl.col("faildate"))))
             .drop("label_window_end")

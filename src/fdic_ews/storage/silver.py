@@ -136,10 +136,24 @@ def build_reference(paths: Paths, name: str) -> dict[str, Any]:
     stats = {"table": name, "rows_bronze": n_in, "exact_duplicates_removed": n_in - df.height,
              "rows_silver": df.height, "cast_failures": cast_fail}
     if name == "failures":
-        # A CERT can appear twice (e.g. assisted transaction then failure): keep earliest failure.
+        # The FDIC list mixes outright failures (RESTYPE = "FAILURE") with open-bank
+        # assistance transactions (RESTYPE = "ASSISTANCE"), after which the bank keeps
+        # operating and reporting. Only failures define the label.
         n_before = df.height
-        df = df.filter(pl.col("cert").is_not_null()).sort("faildate").unique("cert", keep="first")
-        stats.update(rows_without_cert_or_repeat=n_before - df.height, rows_silver=df.height,
+        if "restype" in df.columns:
+            df.filter(pl.col("restype").str.to_uppercase() != "FAILURE").write_parquet(
+                paths.silver / "failures_excluded_assistance.parquet", **PARQUET_OPTS)
+            n_assist = df.filter(pl.col("restype").str.to_uppercase() != "FAILURE").height
+            df = df.filter(pl.col("restype").str.to_uppercase() == "FAILURE")
+        else:
+            n_assist = 0
+        n_after_type = df.height
+        df = df.filter(pl.col("cert").is_not_null())
+        n_no_cert = n_after_type - df.height
+        n_after_cert = df.height
+        df = df.sort("faildate").unique("cert", keep="first")  # a CERT fails at most once
+        stats.update(assistance_rows_excluded=n_assist, rows_without_cert=n_no_cert,
+                     repeated_cert_rows=n_after_cert - df.height, rows_silver=df.height,
                      min_faildate=str(df["faildate"].min()), max_faildate=str(df["faildate"].max()))
     out = paths.silver / f"{name}.parquet"
     df.write_parquet(out, **PARQUET_OPTS)

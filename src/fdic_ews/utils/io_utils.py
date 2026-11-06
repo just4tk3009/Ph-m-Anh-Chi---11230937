@@ -99,7 +99,13 @@ def write_delta_safe(df: Any, out: Path, partition_by: list[str] | None = None) 
     import shutil
     import tempfile
 
-    opts = {"partition_by": partition_by} if partition_by else {}
+    from deltalake import WriterProperties
+
+    # delta-rs defaults to snappy: set zstd explicitly so the format comparison is fair
+    opts: dict[str, Any] = {"writer_properties": WriterProperties(compression="ZSTD",
+                                                                  compression_level=3)}
+    if partition_by:
+        opts["partition_by"] = partition_by
     try:
         df.write_delta(str(out), mode="overwrite", delta_write_options=opts)
         return False
