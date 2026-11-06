@@ -116,10 +116,20 @@ class FDICClient:
             raise RuntimeError(f"Incomplete download for {endpoint} {filters}: "
                                f"{received} rows received, API reports {total}")
 
-    def probe_fields(self, endpoint: str, filters: str | None) -> list[str]:
-        """Fetch one row with *all* fields: used to validate the configured field list."""
-        params: dict[str, Any] = {"limit": 1, "format": "json"}
+    def probe_fields(self, endpoint: str, filters: str | None,
+                     fields: list[str], n: int = 500) -> dict[str, float]:
+        """Request the configured fields explicitly and return, per field, the share of
+        sampled rows where it is present and non-null (-1 = key absent from every row).
+
+        The configured list must be requested explicitly: without ``fields`` the API
+        returns only a default subset of columns, so absent keys there prove nothing.
+        """
+        params: dict[str, Any] = {"limit": n, "format": "json", "fields": ",".join(fields)}
         if filters:
             params["filters"] = filters
         rows, _ = self.parse(self._get(endpoint, params))
-        return sorted(rows[0].keys()) if rows else []
+        out: dict[str, float] = {}
+        for f in fields:
+            present = [r for r in rows if f in r]
+            out[f] = -1.0 if not present else sum(r[f] is not None for r in present) / len(rows)
+        return out

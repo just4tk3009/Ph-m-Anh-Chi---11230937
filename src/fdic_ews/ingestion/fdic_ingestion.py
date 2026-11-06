@@ -119,18 +119,28 @@ def ingest_reference(cfg: dict[str, Any], force: bool = False) -> dict[str, int]
 
 
 def probe(cfg: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """Check that every configured field exists in the live API (run before a full download)."""
+    """Check every configured field against the live API (run before a full download).
+
+    ``missing``  = key never returned (wrong field name -> fix config.yaml);
+    ``all_null`` = key returned but empty in the sample (exists, not reported that quarter);
+    ``non_null_share`` = share of sampled rows with a value, per field.
+    """
     client = FDICClient.from_config(cfg)
     ing = cfg["ingestion"]
     report = {}
     for endpoint, wanted, flt in (("financials", ing["financial_fields"], "REPDTE:20231231"),
                                   ("institutions", ing["institution_fields"], None),
                                   ("failures", ing["failure_fields"], None)):
-        available = set(client.probe_fields(endpoint, flt))
-        missing = [f for f in wanted if f not in available]
-        report[endpoint] = {"missing": missing, "n_available": len(available)}
+        share = client.probe_fields(endpoint, flt, wanted)
+        missing = [f for f, v in share.items() if v < 0]
+        all_null = [f for f, v in share.items() if v == 0]
+        report[endpoint] = {"missing": missing, "all_null": all_null,
+                            "non_null_share": {f: round(v, 3) for f, v in share.items()}}
         if missing:
-            log.warning("%s: configured fields NOT returned by the API: %s", endpoint, missing)
-        else:
-            log.info("%s: all %d configured fields available", endpoint, len(wanted))
+            log.warning("%s: field names NOT returned by the API (check spelling): %s",
+                        endpoint, missing)
+        if all_null:
+            log.warning("%s: fields returned but empty in the sample: %s", endpoint, all_null)
+        if not missing and not all_null:
+            log.info("%s: all %d configured fields returned with values", endpoint, len(wanted))
     return report
