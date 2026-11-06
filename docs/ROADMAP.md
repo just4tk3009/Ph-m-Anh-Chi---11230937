@@ -13,7 +13,7 @@ placeholders, not results, and must not appear unless your own run produces them
 | 6-8 Nov | 1 | `probe`, trial ingest of 4 quarters, then full ingest 2001Q1-2025Q2 | `bronze/_manifest.jsonl`, rows per quarter |
 | 8-9 Nov | 1 | `silver`, `gold`, `benchmark` | `storage_benchmark.md/.csv/.png`, `gold_label_counts_by_year.csv` |
 | 9-11 Nov | 2 | `audit`, `leakage`; read every table and decide | `module2_data_quality.md`, `module2_leakage_checks.md` |
-| 11-15 Nov | 3 | CAMELS ratios in Polars Lazy; de-cumulate YTD income; QoQ, 4q rolling mean/std; PySpark window demo; Pandas vs Polars vs PySpark benchmark | `processing_benchmark.csv`, feature dictionary |
+| 11-15 Nov (done 6 Nov) | 3 | CAMELS ratios in Polars Lazy; de-cumulate YTD income; QoQ, 4q rolling mean/std; PySpark window demo; Pandas vs Polars vs PySpark benchmark | `processing_benchmark.csv`, feature dictionary |
 | 15-18 Nov | 4 | Selection funnel fitted inside CV folds; Freedman simulation (select-before-split vs after) | funnel table, simulation table |
 | 18-21 Nov | 5 | Purged walk-forward CV; LR / RF / GBM; class weights vs undersampling vs SMOTE (train fold only); PR-AUC, Recall@top-k; cost-based threshold | metric tables, PR curves, cost curve |
 | 21-22 Nov | 6 | Serialize the fitted pipeline (`joblib`), `predict.py` that scores a new quarter, README final | `models/`, end-to-end rerun log |

@@ -100,3 +100,10 @@ quality:
 benchmark:
   repeats: 5                    # repeated runs per measurement (median reported)
   scale_factors: [1, 4]         # x1 = real data; x4 = real rows replicated (labelled as such)
+
+processing_benchmark:           # Module 3: same workload in four engines
+  engines: [pandas, polars_eager, polars_lazy, pyspark]   # pyspark is skipped if not installed
+  scale_factors: [1, 4]
+  repeats: 3
+  spark_driver_memory: 4g
+  spark_shuffle_partitions: 8   # Spark default 200 is tuned for clusters, not one laptop

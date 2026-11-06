@@ -12,4 +12,4 @@ pyyaml>=6.0
 psutil>=5.9
 matplotlib>=3.8
 pytest>=8.0
-# Module 3 (PySpark demo) will add: pyspark>=3.5
+pyspark>=4.0      # Module 3 demo; needs Java 17+ (Colab: apt-get install openjdk-17-jdk-headless)

@@ -10,8 +10,9 @@ FDIC BankFind API → **Bronze** (raw JSON) → **Silver** (typed, deduplicated 
 CAMELS features (Polars, PySpark demo) → leakage-safe feature selection →
 imbalanced early-warning model.
 
-> Status: Modules 1-2 (ingestion, storage, storage benchmark, data quality,
-> anti-leakage preprocessing) are implemented. Modules 3-6 follow `docs/ROADMAP.md`.
+> Status: Modules 1-3 implemented (ingestion, storage + benchmark, data quality,
+> anti-leakage preprocessing, CAMELS features, Pandas/Polars/PySpark benchmark).
+> Modules 4-6 follow `docs/ROADMAP.md`. Measured results are in `reports/`.
 
 ## Repository layout
 
@@ -28,6 +29,9 @@ src/fdic_ews/
   quality/preprocessing.py  sklearn transformers fitted on train only
   quality/audit.py          9 data-quality checks -> tables + figures
   quality/leakage_checks.py empirical proof that preprocessing never sees test data
+  features/camels.py        50 CAMELS + dynamic features, Polars Lazy, look-ahead check
+  features/engines.py       one workload in Pandas / Polars eager / Polars lazy / PySpark
+  features/processing_benchmark.py  time + peak memory (incl. Spark JVM) + result equality
 tools/make_synthetic_bronze.py  SYNTHETIC data for smoke tests only (never reported)
 tests/                      pytest suite (runs offline on synthetic data)
 notebooks/colab_modules_1_2.ipynb  run everything on Google Colab
@@ -44,7 +48,7 @@ pip install -r requirements.txt
 python pipeline.py probe                              # 1. are all configured fields served by the API?
 python pipeline.py ingest --start 2023Q1 --end 2023Q4 # 2. trial download (4 quarters)
 python pipeline.py ingest                             # 3. full range in config.yaml (~1 h, resumable)
-python pipeline.py all                                # 4. silver -> gold -> benchmark -> audit -> leakage
+python pipeline.py all                                # 4. silver -> gold -> benchmark -> audit -> leakage -> features -> bench3
 pytest -q                                             # offline tests on synthetic data
 ```
 
@@ -72,6 +76,16 @@ fitted later on the training window only (`quality/preprocessing.py`).
 5. `LEAKY_COLUMNS` (failure date, `active`, institution end date, …) can never be features.
 6. All learned preprocessing (near-constant filter, IQR fences, medians, scales) is inside a
    scikit-learn `ColumnTransformer` fitted on train; `pipeline.py leakage` proves it numerically.
+
+## Module 3: features
+
+`data/gold/features.parquet` holds 50 features per bank-quarter (dictionary with formulas and
+source fields: `reports/tables/feature_dictionary.csv`). Year-to-date income items are
+de-cumulated to quarterly flows (null across reporting gaps) and annualised. Rolling statistics
+use a time-based window `(t-12 months, t]`, so they never look forward and never silently
+stretch across a missing quarter. `features_lookahead_check.csv` shows that recomputing all
+features on data truncated at the train cut-off changes nothing (and a unit test proves the
+check catches a deliberately leaky feature).
 
 ## Data source
 
