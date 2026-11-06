@@ -1,4 +1,4 @@
-# Module 2 - Data-quality audit (measured, generated 2026-11-06T07:30:54Z)
+# Module 2 - Data-quality audit (measured, generated 2026-11-06T07:49:32Z)
 
 All numbers below are computed by `python pipeline.py audit` on the data in `/content/data`. Fences, variance filters and LOF are fitted on the TRAIN window only.
 
@@ -89,12 +89,12 @@ Columns dropped: none
 | ratio | train_skew | train_kurtosis | train_iqr_flag_pct | train_gauss_flag_pct | test_iqr_flag_pct | fail_rate_pct_if_iqr_flagged | fail_rate_pct_if_not_flagged |
 |---|---|---|---|---|---|---|---|
 | equity_to_assets | 4.986 | 60.922 | 3.836 | 2.073 | 3.046 | 0.182 | 0.499 |
-| npl_to_loans | nan | nan | 4.961 | 98.264 | 2.662 | 7.496 | 0.121 |
-| alll_to_loans | nan | nan | 4.462 | 98.055 | 3.155 | 4.797 | 0.285 |
-| loans_to_deposits | nan | nan | 1.659 | 99.026 | 1.165 | 0.031 | 0.494 |
+| npl_to_loans | 9.454 | 207.756 | 3.602 | 1.585 | 1.066 | 10.599 | 0.109 |
+| alll_to_loans | 27.068 | 1,413.022 | 3.017 | 0.751 | 1.584 | 7.514 | 0.268 |
+| loans_to_deposits | 158.926 | 34,840.376 | 0.718 | 0.039 | 0.179 | 0.072 | 0.490 |
 | securities_to_assets | 1.102 | 1.682 | 0.192 | 1.203 | 0.081 | 0.000 | 0.487 |
 | cash_to_assets | 5.302 | 42.568 | 4.210 | 1.779 | 12.617 | 0.775 | 0.474 |
-| brokered_to_deposits | nan | nan | 14.124 | 98.818 | 14.652 | 1.700 | 0.287 |
+| brokered_to_deposits | 273.209 | 101,859.176 | 14.424 | 0.639 | 15.457 | 1.771 | 0.270 |
 | ore_to_assets | 8.034 | 109.265 | 8.219 | 1.748 | 3.242 | 4.200 | 0.154 |
 | log_assets | 0.948 | 3.001 | 0.497 | 1.441 | 1.194 | 0.208 | 0.488 |
 
