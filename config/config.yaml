@@ -1,0 +1,102 @@
+# =============================================================================
+# BFT65B - FDIC Early-Warning Pipeline: central configuration
+# Every script reads this file, so the whole pipeline is reproducible from it.
+# Paths are relative to the repository root unless absolute.
+# =============================================================================
+
+paths:
+  data_dir: data            # bronze/ silver/ gold/ live under this folder
+  reports_dir: reports      # tables/ figures/ for the report
+
+api:
+  base_url: https://api.fdic.gov/banks
+  page_limit: 10000          # FDIC API maximum page size
+  timeout_s: 90
+  max_retries: 6             # HTTP retries on 429/5xx/connection errors
+  backoff_factor: 2.0        # sleep = backoff_factor * 2**(retry-1) seconds
+  sleep_between_requests_s: 0.25   # politeness delay between pages
+
+ingestion:
+  start_quarter: 2001Q1
+  end_quarter: 2025Q2
+  # Call Report variables (FDIC BankFind "financials" endpoint).
+  # Amounts are in THOUSANDS of USD. Income items (NETINC, INTINC, EINTEXP,
+  # NONII, NONIX, ELNATR, NTLNLS) are YEAR-TO-DATE cumulative values.
+  # Run `python pipeline.py probe` first: it lists which of these fields the
+  # API actually returns and warns about any that are unknown.
+  financial_fields:
+    - CERT       # FDIC certificate number (bank id)
+    - REPDTE     # report date (quarter end, YYYYMMDD)
+    - ASSET      # total assets
+    - DEP        # total deposits
+    - DEPDOM     # domestic deposits
+    - EQ         # total equity capital
+    - LNLSGR     # gross loans and leases
+    - LNLSNET    # net loans and leases
+    - LNATRES    # allowance for loan and lease losses
+    - NCLNLS     # noncurrent loans and leases (90+ days past due + nonaccrual)
+    - P3ASSET    # assets 30-89 days past due
+    - P9ASSET    # assets 90+ days past due
+    - NAASSET    # nonaccrual assets
+    - ORE        # other real estate owned (foreclosed assets)
+    - NTLNLS     # net charge-offs (YTD)
+    - ELNATR     # provision for loan and lease losses (YTD)
+    - NETINC     # net income (YTD)
+    - INTINC     # total interest income (YTD)
+    - EINTEXP    # total interest expense (YTD)
+    - NONII      # total noninterest income (YTD)
+    - NONIX      # total noninterest expense (YTD)
+    - SC         # total securities
+    - CHBAL      # cash and balances due from depository institutions
+    - BRO        # brokered deposits
+    - RBC1AAJ    # leverage (core capital) ratio, %
+    - RBCRWAJ    # total risk-based capital ratio, %
+    - ROA        # return on assets, % (FDIC computed)
+    - ROE        # return on equity, % (FDIC computed)
+    - NIMY       # net interest margin, % (FDIC computed)
+  institution_fields:
+    - CERT
+    - NAME
+    - CITY
+    - STALP      # state abbreviation
+    - BKCLASS    # charter class
+    - REGAGNT    # primary regulator
+    - ESTYMD     # establishment date
+    - ACTIVE     # LEAKY: 0/1 status as of download date (future information)
+    - ENDEFYMD   # LEAKY: end date of the institution (future information)
+  failure_fields:
+    - CERT
+    - NAME
+    - CITYST
+    - FAILDATE
+    - FAILYR
+    - RESTYPE
+    - RESTYPE1
+    - SAVR
+    - QBFASSET
+    - QBFDEP
+    - COST
+
+gold:
+  label_horizon_quarters: 4     # target = bank fails within the next 4 quarters
+  publication_lag_days: 60      # report is publicly usable ~60 days after REPDTE
+  gold_format: delta            # delta | parquet
+
+split:                          # temporal split, all dates inclusive
+  train_start: 2001-03-31
+  train_end: 2012-12-31
+  valid_end: 2015-12-31
+  test_end: 2024-12-31
+  purge_horizon: true           # drop rows whose label window crosses a boundary
+
+quality:
+  iqr_k: 3.0                    # Tukey far-out fences (k=3) for heavy tails
+  near_constant_share: 0.995    # drop if the mode covers >= 99.5% of train rows
+  lof_neighbors: 35
+  lof_contamination: 0.01
+  lof_max_train_rows: 60000     # LOF is O(n^2)-ish; sample the train window
+  random_state: 42
+
+benchmark:
+  repeats: 5                    # repeated runs per measurement (median reported)
+  scale_factors: [1, 4]         # x1 = real data; x4 = real rows replicated (labelled as such)

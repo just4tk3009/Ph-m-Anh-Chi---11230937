@@ -1,0 +1,11 @@
+# data is reproducible from the API -> never committed (too large, and Bronze is raw)
+data/
+data_synthetic/
+reports_synthetic/
+logs/
+*.parquet
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+.pytest_cache/
