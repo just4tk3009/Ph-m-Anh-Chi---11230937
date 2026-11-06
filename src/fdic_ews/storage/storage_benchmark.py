@@ -39,7 +39,7 @@ from typing import Any
 import polars as pl
 
 from ..utils.config import Paths
-from ..utils.io_utils import folder_size_bytes, md_table, utc_now, write_json
+from ..utils.io_utils import folder_size_bytes, md_table, utc_now, write_delta_safe, write_json
 from ..utils.logging_utils import get_logger
 
 log = get_logger("benchmark.storage")
@@ -68,8 +68,9 @@ def write_format(df: pl.DataFrame, fmt: str, root: Path) -> tuple[Path, float]:
         df.write_parquet(path, compression="zstd", compression_level=3, statistics=True,
                          row_group_size=100_000)
     elif fmt == "delta_zstd":
-        df.write_delta(str(path), mode="overwrite",
-                       delta_write_options={"partition_by": ["repyear"]})
+        if write_delta_safe(df, path, ["repyear"]):
+            log.warning("Delta written via local copy (no atomic rename on this file "
+                        "system): write time is not comparable. Benchmark on a local disk.")
     return path, time.perf_counter() - t0
 
 

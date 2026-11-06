@@ -31,7 +31,7 @@ from typing import Any
 import polars as pl
 
 from ..utils.config import Paths
-from ..utils.io_utils import utc_now, write_json
+from ..utils.io_utils import utc_now, write_delta_safe, write_json
 from ..utils.logging_utils import get_logger
 
 log = get_logger("gold")
@@ -112,8 +112,9 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
     fmt = cfg["gold"].get("gold_format", "delta")
     if fmt == "delta":
         try:
-            gold.write_delta(str(out), mode="overwrite",
-                             delta_write_options={"partition_by": ["repyear"]})
+            if write_delta_safe(gold, out, ["repyear"]):
+                log.warning("file system refused Delta's atomic rename (e.g. Google Drive): "
+                            "wrote the table locally and copied it to %s", out)
         except ImportError:
             log.warning("deltalake not installed: falling back to Parquet for Gold")
             fmt = "parquet"
