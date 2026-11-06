@@ -10,10 +10,10 @@ Three rules guarantee the features use only information available at ``repdte``:
    Quarterly flow = YTD(q) - YTD(q-1) inside the same calendar year, Q1 flow = YTD(Q1).
    If the previous quarter is missing (gap in the series) the flow is null, never
    guessed. Flows are annualised (x4) before dividing by stock variables.
-2. **Backward-only, gap-aware windows.** Rolling statistics use
-   ``rolling_*_by("repdte", window_size="12mo", closed="right")`` = the current
-   quarter and the quarters of the previous 12 months. A row-based window of 4
-   rows would silently reach further back when a bank skipped a quarter.
+2. **Backward-only, gap-aware windows.** Rolling statistics cover the current
+   quarter and the quarters of the previous 12 months (quarter index t-3 .. t),
+   ignoring missing values. A row-based window of 4 rows would silently reach
+   further back when a bank skipped a quarter.
    (PySpark equivalent: ``Window.partitionBy("cert").orderBy(qidx).rangeBetween(-3, 0)``
    on an integer quarter index; ``rowsBetween(-3, 0)`` only when there are no gaps.)
 3. **Changes only against the immediately preceding quarter** (QoQ) or the same
@@ -129,13 +129,22 @@ def add_dynamic_features(lf: pl.LazyFrame, base: list[str]) -> pl.LazyFrame:
     consecutive = (pl.col("_qidx") - pl.col("_qidx").shift(1).over("cert")) == 1
     exprs = []
     for b in base:
+        # Window = quarters qidx-3 .. qidx, i.e. (t - 12 months, t]. The k-th previous
+        # report enters only if it lies inside that window, so a gap in the series
+        # shrinks the window instead of stretching it back in time. Missing values are
+        # ignored (Polars' rolling_*_by does not accept nulls, hence this explicit form).
+        vals = [pl.col(b)] + [
+            pl.when(pl.col("_qidx") - pl.col("_qidx").shift(k).over("cert") <= 3)
+            .then(pl.col(b).shift(k).over("cert")).otherwise(None)
+            for k in (1, 2, 3)]
+        n = pl.sum_horizontal([v.is_not_null().cast(pl.Int32) for v in vals])
+        mean = pl.when(n >= 1).then(pl.sum_horizontal(vals) / n).otherwise(None)
+        ss = pl.sum_horizontal([(v - mean) ** 2 for v in vals])
         exprs += [
             pl.when(consecutive).then(pl.col(b) - pl.col(b).shift(1).over("cert"))
             .otherwise(None).alias(f"{b}_qoq"),
-            pl.col(b).rolling_mean_by("repdte", window_size="12mo", closed="right")
-            .over("cert").alias(f"{b}_ma4"),
-            pl.col(b).rolling_std_by("repdte", window_size="12mo", closed="right")
-            .over("cert").alias(f"{b}_sd4"),
+            mean.alias(f"{b}_ma4"),
+            pl.when(n >= 2).then((ss / (n - 1)).sqrt()).otherwise(None).alias(f"{b}_sd4"),
         ]
     lf = lf.with_columns(exprs)
     # YoY growth matched on quarter index (gap-safe): asset(t) / asset(t-4) - 1

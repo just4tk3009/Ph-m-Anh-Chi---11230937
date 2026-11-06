@@ -79,6 +79,10 @@ def main() -> None:
                  "NIMY": round(rng.normal(3.6, 0.5), 3)}
             if rng.random() < 0.03:
                 r["BRO"] = None                       # random missing
+            if rng.random() < 0.01:
+                r["NCLNLS"] = None                    # nulls inside rolling windows
+            if rng.random() < 0.01:
+                r["EQ"] = None
             if q.year < 2005:
                 r["P3ASSET"] = None                   # structural missing (form change)
             if stress > 0 and rng.random() < 0.3:

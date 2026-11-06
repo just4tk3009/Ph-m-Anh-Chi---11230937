@@ -68,3 +68,17 @@ def test_spark_agrees(synthetic_cfg):
         pytest.skip(f"Spark unavailable: {err}")
     cmp = _compare(E.run_polars_lazy(path), res)
     assert cmp["count_mismatches"] == 0 and cmp["max_rel_diff_sums"] < 1e-9
+
+
+def test_rolling_window_is_gap_aware_and_ignores_nulls():
+    from fdic_ews.features.camels import add_dynamic_features, add_quarterly_flows
+    d = [date(2020, 3, 31), date(2020, 6, 30), date(2020, 9, 30), date(2020, 12, 31),
+         date(2021, 6, 30), date(2021, 9, 30)]
+    df = pl.DataFrame({"cert": [1] * 6, "repdte": d, "x": [1.0, 2.0, 3.0, 4.0, 5.0, None],
+                       "asset": [1.0] * 6})
+    lf = add_quarterly_flows(df.lazy())
+    out = add_dynamic_features(lf, ["x"]).sort("repdte").collect()
+    # 2021Q2 window = 2020Q3..2021Q2 -> {3, 4, 5} (2021Q1 missing, 2020Q2 outside)
+    assert out["x_ma4"].to_list() == [1.0, 1.5, 2.0, 2.5, 4.0, 4.5]
+    assert out["x_sd4"][0] is None and abs(out["x_sd4"][4] - 1.0) < 1e-12
+    assert out["x_qoq"].to_list() == [None, 1.0, 1.0, 1.0, None, None]
