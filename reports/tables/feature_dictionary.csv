@@ -1,0 +1,51 @@
+feature,pillar,formula,source_fields,type,null_share
+equity_to_assets,C,EQ / ASSET,"EQ, ASSET",level,0.0025131210308701286
+leverage_ratio,C,Tier 1 leverage ratio (%) as reported,RBC1AAJ,level,0.0
+total_rbc_ratio,C,Total risk-based capital ratio (%) as reported,RBCRWAJ,level,0.0
+npl_ratio,A,NCLNLS / LNLSGR,"NCLNLS, LNLSGR",level,0.01711721069533529
+alll_to_loans,A,LNATRES / LNLSGR,"LNATRES, LNLSGR",level,0.019592822457087954
+alll_coverage,A,LNATRES / NCLNLS,"LNATRES, NCLNLS",level,0.11677212541945461
+pd30_89_to_assets,A,P3ASSET / ASSET,"P3ASSET, ASSET",level,0.0
+pd90_to_assets,A,P9ASSET / ASSET,"P9ASSET, ASSET",level,0.0
+nonaccrual_to_assets,A,NAASSET / ASSET,"NAASSET, ASSET",level,0.0
+ore_to_assets,A,ORE / ASSET,"ORE, ASSET",level,0.0025131210308701286
+nco_rate_ann,A,4 x NTLNLS_q / LNLSGR,"NTLNLS (YTD), LNLSGR",level,0.020780135091075392
+provision_rate_ann,A,4 x ELNATR_q / LNLSGR,"ELNATR (YTD), LNLSGR",level,0.020780135091075392
+texas_ratio,A,(NCLNLS + ORE) / (EQ + LNATRES),"NCLNLS, ORE, EQ, LNATRES",level,0.0028420484677463566
+efficiency_ratio,M,NONIX_q / (INTINC_q - EINTEXP_q + NONII_q),"NONIX, INTINC, EINTEXP, NONII (YTD)",level,0.00656267943135948
+nonint_exp_to_assets_ann,M,4 x NONIX_q / ASSET,"NONIX (YTD), ASSET",level,0.003971654533860771
+roa_ann,E,4 x NETINC_q / ASSET,"NETINC (YTD), ASSET",level,0.003971654533860771
+roe_ann,E,4 x NETINC_q / EQ (null if EQ <= 0),"NETINC (YTD), EQ",level,0.004537178899016392
+nim_ann,E,4 x (INTINC_q - EINTEXP_q) / ASSET,"INTINC, EINTEXP (YTD), ASSET",level,0.003971654533860771
+nonint_inc_to_assets_ann,E,4 x NONII_q / ASSET,"NONII (YTD), ASSET",level,0.003971654533860771
+loans_to_deposits,L,LNLSNET / DEP,"LNLSNET, DEP",level,0.00980723121002017
+liquid_assets_to_assets,L,(CHBAL + SC) / ASSET,"CHBAL, SC, ASSET",level,0.0
+cash_to_assets,L,CHBAL / ASSET,"CHBAL, ASSET",level,0.0
+brokered_to_deposits_log1p,L,log(1 + BRO / DEP),"BRO, DEP",level,0.012246776366852194
+has_brokered,L,1 if BRO > 0,BRO,level,0.0025131210308701286
+domestic_dep_share,L,DEPDOM / DEP,"DEPDOM, DEP",level,0.00980723121002017
+securities_to_assets,S,SC / ASSET,"SC, ASSET",level,0.0
+log_assets,S,log(ASSET),ASSET,level,0.0
+equity_to_assets_qoq,dyn,equity_to_assets(t) - equity_to_assets(t-1q),equity_to_assets,change,0.0186868293414815
+equity_to_assets_ma4,dyn,"mean of equity_to_assets over (t-12mo, t]",equity_to_assets,rolling,0.0025131210308701286
+equity_to_assets_sd4,dyn,"std of equity_to_assets over (t-12mo, t]",equity_to_assets,rolling,0.0186868293414815
+npl_ratio_qoq,dyn,npl_ratio(t) - npl_ratio(t-1q),npl_ratio,change,0.033058650070257746
+npl_ratio_ma4,dyn,"mean of npl_ratio over (t-12mo, t]",npl_ratio,rolling,0.016693067421468574
+npl_ratio_sd4,dyn,"std of npl_ratio over (t-12mo, t]",npl_ratio,rolling,0.03276434657410533
+roa_ann_qoq,dyn,roa_ann(t) - roa_ann(t-1q),roa_ann,change,0.020138149523488014
+roa_ann_ma4,dyn,"mean of roa_ann over (t-12mo, t]",roa_ann,rolling,0.003971654533860771
+roa_ann_sd4,dyn,"std of roa_ann over (t-12mo, t]",roa_ann,rolling,0.020138149523488014
+texas_ratio_qoq,dyn,texas_ratio(t) - texas_ratio(t-1q),texas_ratio,change,0.019074906010427578
+texas_ratio_ma4,dyn,"mean of texas_ratio over (t-12mo, t]",texas_ratio,rolling,0.0026444034727812547
+texas_ratio_sd4,dyn,"std of texas_ratio over (t-12mo, t]",texas_ratio,rolling,0.0188787036796593
+loans_to_deposits_qoq,dyn,loans_to_deposits(t) - loans_to_deposits(t-1q),loans_to_deposits,change,0.025813590473799775
+loans_to_deposits_ma4,dyn,"mean of loans_to_deposits over (t-12mo, t]",loans_to_deposits,rolling,0.009595159573086811
+loans_to_deposits_sd4,dyn,"std of loans_to_deposits over (t-12mo, t]",loans_to_deposits,rolling,0.025637585441787056
+liquid_assets_to_assets_qoq,dyn,liquid_assets_to_assets(t) - liquid_assets_to_assets(t-1q),liquid_assets_to_assets,change,0.016208332251335184
+liquid_assets_to_assets_ma4,dyn,"mean of liquid_assets_to_assets over (t-12mo, t]",liquid_assets_to_assets,rolling,0.0
+liquid_assets_to_assets_sd4,dyn,"std of liquid_assets_to_assets over (t-12mo, t]",liquid_assets_to_assets,rolling,0.016208332251335184
+nim_ann_qoq,dyn,nim_ann(t) - nim_ann(t-1q),nim_ann,change,0.020138149523488014
+nim_ann_ma4,dyn,"mean of nim_ann over (t-12mo, t]",nim_ann,rolling,0.003971654533860771
+nim_ann_sd4,dyn,"std of nim_ann over (t-12mo, t]",nim_ann,rolling,0.020138149523488014
+asset_growth_yoy,S,ASSET(t)/ASSET(t-4q) - 1,ASSET,change,0.0638710719860581
+bank_age_years,M,(REPDTE - ESTYMD)/365.25,ESTYMD,level,0.009968809600064632
