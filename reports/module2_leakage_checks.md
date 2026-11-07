@@ -1,4 +1,4 @@
-# Module 2 - Anti-leakage verification (generated 2026-11-07T01:54:17Z)
+# Module 2 - Anti-leakage verification (generated 2026-11-07T12:23:19Z)
 
 | n_numeric_features_in | n_categorical_features_in | n_numeric_kept_after_near_constant | dropped_near_constant | all_medians_equal_train_median | share_medians_equal_full_sample_pct | median_abs_rel_shift_if_fitted_naively_pct | params_invariant_to_test_data | transform_is_row_wise_on_test | output_features_after_preprocessing |
 |---|---|---|---|---|---|---|---|---|---|

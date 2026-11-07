@@ -1,0 +1,17 @@
+{
+  "failures_in_development": 2342,
+  "failures_with_cost": 2312,
+  "cost_median_thousand_usd": 8693.23892315,
+  "cost_mean_thousand_usd": 63695.85848534556,
+  "cost_p25_thousand_usd": 2976.239,
+  "cost_p75_thousand_usd": 31552.89418,
+  "loss_rate_median_pct_of_assets": 20.996147372676322,
+  "avoidable_loss_share_alpha": 0.25,
+  "positive_rows_per_failed_bank": 3.769330453563715,
+  "cfn_per_missed_bank_thousand_usd": 2173.3097307875,
+  "cfn_per_positive_row_thousand_usd": 576.5771288990445,
+  "cfp_per_false_alarm_thousand_usd": 50.0,
+  "cfn_over_cfp": 11.53154257798089,
+  "bayes_threshold_calibrated": 0.07979863562504227,
+  "dollars": "nominal (not inflation-adjusted)"
+}

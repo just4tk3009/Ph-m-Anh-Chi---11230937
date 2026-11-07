@@ -2,7 +2,7 @@
 
 | item | value |
 |---|---|
-| generated_at | 2026-11-07T03:44:47Z |
+| generated_at | 2026-11-07T13:38:03Z |
 | download_method | FDIC BankFind Suite public API (api.fdic.gov/banks), `python pipeline.py ingest` (own resumable client, see README) |
 | download_first_completed | 2026-11-07T01:23:55Z |
 | download_last_completed | 2026-11-07T01:36:53Z |

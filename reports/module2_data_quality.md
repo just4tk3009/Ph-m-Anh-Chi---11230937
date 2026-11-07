@@ -1,4 +1,4 @@
-# Module 2 - Data-quality audit (measured, generated 2026-11-07T01:52:34Z)
+# Module 2 - Data-quality audit (measured, generated 2026-11-07T12:21:32Z)
 
 All numbers below are computed by `python pipeline.py audit` on the data in `/content/data`. Fences, variance filters and LOF are fitted on the TRAIN window only.
 
@@ -6,10 +6,14 @@ All numbers below are computed by `python pipeline.py audit` on the data in `/co
 
 | table | rows_bronze | exact_duplicates_removed | conflicting_key_duplicates | rows_silver | cast_failures |
 |---|---|---|---|---|---|
-| financials | 1,682,616 | 0 | 0 | 1,682,616 | 1,682,616 |
-| institutions | 27,835 | 0 | 0 | 27,835 | 55,670 |
+| financials | 1,682,616 | 0 | 0 | 1,682,616 | 0 |
+| institutions | 27,835 | 0 | 0 | 27,835 | 0 |
 | failures | 4,117 | 0 | 0 | 3,036 | 0 |
 | gold (re-check) |  |  | 0 | 1,681,405 |  |
+
+Cast failures by column (value present in Bronze, null after the dtype cast):
+
+none
 
 ## 2. Panel coverage
 
@@ -57,6 +61,14 @@ _MNAR cannot be proven from observed data; the label below is a data-driven indi
 | lnlsnet | 0.000 | 0.000 | 0.002 | 0.000 | 0.000 | 0.000 | negligible (<0.1%) |
 | lnre | 0.000 | 0.000 | 0.002 | 0.000 | 0.000 | 0.000 | negligible (<0.1%) |
 | sc | 0.000 | 0.000 | 0.002 | 0.000 | 0.000 | 0.000 | negligible (<0.1%) |
+
+## 4b. Structural zeros (exact-zero share per year)
+
+_A column that is ~100% zero in some years and rarely zero in others is not measured as 0: the item was not collected. Features treat it as missing._
+
+| column | zero_pct_min_year | zero_pct_max_year | years_with_zero_pct_ge_95 | first_year | last_year | structural_zero |
+|---|---|---|---|---|---|---|
+| rbcrwaj | 0.196 | 100.000 | 6 | 1,984 | 1,989 | yes |
 
 ## 5. Zero / near-zero variance (decided on train)
 
@@ -115,6 +127,6 @@ Columns dropped: ['p3asset']
 
 | split | rows | lof_flag_pct | fail_rate_pct_flagged | fail_rate_pct_not_flagged |
 |---|---|---|---|---|
-| train_sample | 60,000 | 0.908 | 4.220 | 1.378 |
-| valid | 630,440 | 2.857 | 0.155 | 0.056 |
-| test | 401,443 | 7.738 | 0.232 | 0.461 |
+| train_sample | 60,000 | 0.900 | 3.519 | 1.519 |
+| valid | 630,440 | 2.699 | 0.165 | 0.056 |
+| test | 401,443 | 8.133 | 0.159 | 0.468 |

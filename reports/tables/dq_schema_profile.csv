@@ -32,7 +32,7 @@ rbcrwaj,Float64,0.0,1211000,-16629.62962962963,274636.3636363636,candidate
 roa,Float64,0.0,1653171,-761.9047619047618,860.6082036775106,candidate
 roe,Float64,1.0512636753191527,27431,-354657.8,301050.0,candidate
 sc,Float64,0.00005947407079198646,269739,-965382.0,941778000.0,candidate
-stname,Float64,100.0,1,None,None,meta
+stname,String,0.0,57,"","",meta
 _bronze_file,String,0.0,238,"","",meta
 _silver_built_at,String,0.0,1,"","",meta
 stalp,String,0.6539768824286831,57,"","",candidate

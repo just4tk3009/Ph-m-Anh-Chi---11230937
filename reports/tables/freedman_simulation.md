@@ -1,4 +1,4 @@
-# Freedman's paradox: selection before vs inside CV (generated 2026-11-07T03:44:43Z)
+# Freedman's paradox: selection before vs inside CV (generated 2026-11-07T13:20:52Z)
 
 Pure noise (true AUC = 0.5). Leaky = top-k features chosen on all rows, then 5-fold CV; correct = selection refitted inside each training fold.
 

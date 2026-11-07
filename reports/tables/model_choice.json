@@ -1,0 +1,17 @@
+{
+  "frozen_at": "2026-11-07T13:35:35Z",
+  "chosen_model": "rf_weights",
+  "selection_metric": "pr_auc",
+  "features": [
+    "texas_ratio_sd4",
+    "roa_ann_sd4",
+    "texas_ratio",
+    "equity_to_assets",
+    "texas_ratio_qoq",
+    "leverage_ratio"
+  ],
+  "threshold": 0.05478758353509188,
+  "cfn_row": 576.5771288990445,
+  "cfp": 50.0,
+  "config_sha1": "02cc3adb62453152b23d1585de8b11e8ccc1b596"
+}

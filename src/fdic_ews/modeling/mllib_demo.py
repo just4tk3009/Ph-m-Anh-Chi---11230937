@@ -84,6 +84,8 @@ def run_mllib(cfg: dict[str, Any]) -> dict[str, Any]:
       .write_parquet(tmp / "train.parquet")
     va.with_row_index("row_id").write_parquet(tmp / "valid.parquet")
     pc = cfg.get("processing_benchmark", {})
+    from pyspark import SparkContext
+    jvm_was_running = SparkContext._gateway is not None  # an earlier stage started the JVM
     t0 = time.perf_counter()
     spark = spark_session(pc.get("spark_driver_memory", "4g"),
                           int(pc.get("spark_shuffle_partitions", 8)))
@@ -114,7 +116,7 @@ def run_mllib(cfg: dict[str, Any]) -> dict[str, Any]:
         shutil.rmtree(tmp, ignore_errors=True)
     p_sp = pred["p"].to_numpy()
     rows.append({"engine": "spark-mllib", "fit_seconds": fit_s, "predict_seconds": pred_s,
-                 "startup_seconds": startup,
+                 "startup_seconds": startup, "jvm_already_running": jvm_was_running,
                  "valid_pr_auc": float(average_precision_score(yva, p_sp)),
                  "valid_roc_auc": float(roc_auc_score(yva, p_sp))})
     agree = {"max_abs_prob_diff": float(np.max(np.abs(p_sk - p_sp))),
@@ -131,7 +133,9 @@ def _write(paths: Paths, rows, agree, feats, skipped: str | None = None) -> dict
     md = [f"# Spark MLlib demo (generated {utc_now()})\n",
           "Unregularised, class-weighted logistic regression; median imputation + "
           "standardisation fitted on train (1984-1992); scored on validation (1993-2007). "
-          f"Features: {', '.join(feats)}.\n", md_table(tbl.to_dicts())]
+          f"Features: {', '.join(feats)}.\n",
+          "`startup_seconds` covers JVM launch only when `jvm_already_running` is false; "
+          "a cold start is measured in `processing_benchmark.md`.\n", md_table(tbl.to_dicts())]
     if agree:
         md += ["\nAgreement of the two engines' validation probabilities:\n", md_table([agree])]
     if skipped:

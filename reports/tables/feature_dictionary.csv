@@ -1,7 +1,7 @@
 feature,pillar,formula,source_fields,type,null_share
 equity_to_assets,C,EQ / ASSET,"EQ, ASSET",level,0.0024669844564515985
-leverage_ratio,C,Tier 1 leverage ratio (%) as reported,RBC1AAJ,level,0.0
-total_rbc_ratio,C,Total risk-based capital ratio (%) as reported,RBCRWAJ,level,0.0
+leverage_ratio,C,Tier 1 leverage ratio (%) as reported; 0 = not reported -> null,RBC1AAJ,level,0.0496727439254671
+total_rbc_ratio,C,Total risk-based capital ratio (%) as reported; 0 = not reported -> null,RBCRWAJ,level,0.2799777566975238
 npl_ratio,A,NCLNLS / LNLSGR,"NCLNLS, LNLSGR",level,0.01282439388487604
 alll_to_loans,A,LNATRES / LNLSGR,"LNATRES, LNLSGR",level,0.013785494868874542
 alll_coverage,A,LNATRES / NCLNLS,"LNATRES, NCLNLS",level,0.0917411331594708
