@@ -57,10 +57,12 @@ def _ratio_specs() -> list[tuple[str, str, str, str, pl.Expr]]:
     return [
         # C - Capital adequacy
         ("equity_to_assets", "C", "EQ / ASSET", "EQ, ASSET", _div(c("eq"), c("asset"))),
-        ("leverage_ratio", "C", "Tier 1 leverage ratio (%) as reported", "RBC1AAJ",
-         c("rbc1aaj")),
-        ("total_rbc_ratio", "C", "Total risk-based capital ratio (%) as reported", "RBCRWAJ",
-         c("rbcrwaj")),
+        # FDIC reports 0 for these ratios in quarters before risk-based capital was
+        # collected (structural zero, see dq_zero_share_by_year.csv) -> treat 0 as missing
+        ("leverage_ratio", "C", "Tier 1 leverage ratio (%) as reported; 0 = not reported -> null",
+         "RBC1AAJ", pl.when(c("rbc1aaj") > 0).then(c("rbc1aaj"))),
+        ("total_rbc_ratio", "C", "Total risk-based capital ratio (%) as reported; 0 = not "
+         "reported -> null", "RBCRWAJ", pl.when(c("rbcrwaj") > 0).then(c("rbcrwaj"))),
         # A - Asset quality
         ("npl_ratio", "A", "NCLNLS / LNLSGR", "NCLNLS, LNLSGR", _div(c("nclnls"), c("lnlsgr"))),
         ("alll_to_loans", "A", "LNATRES / LNLSGR", "LNATRES, LNLSGR",

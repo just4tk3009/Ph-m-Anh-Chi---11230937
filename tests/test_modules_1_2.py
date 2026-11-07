@@ -85,3 +85,24 @@ def test_audit_and_leakage_run(synthetic_cfg):
     assert summary["all_medians_equal_train_median"]
     assert summary["params_invariant_to_test_data"]
     assert (synthetic_cfg["_paths"].reports / "module2_data_quality.md").exists()
+
+
+def test_silver_keeps_text_and_date_columns(synthetic_cfg):
+    """Regression: STNAME was cast to Float64 (every value lost) and INSDATE not parsed."""
+    from fdic_ews.utils.io_utils import read_json
+    paths = synthetic_cfg["_paths"]
+    st = read_json(paths.silver / "_silver_build_stats.json")
+    for t in ("financials", "institutions"):
+        assert not st[t].get("cast_failures"), st[t].get("cast_failures")
+    inst = pl.read_parquet(paths.silver / "institutions.parquet")
+    assert inst["stname"].dtype == pl.String and inst["stname"].null_count() == 0
+    assert inst["insdate"].dtype == pl.Date and inst["insdate"].null_count() == 0
+
+
+def test_structural_zero_detected_and_treated_as_missing(synthetic_cfg):
+    from fdic_ews.quality.audit import check_zero_share
+    g = read_gold(synthetic_cfg, lazy=False)
+    summ, _ = check_zero_share(g)
+    flagged = set(summ.filter(pl.col("structural_zero"))["column"])
+    assert {"rbc1aaj", "rbcrwaj"} <= flagged
+    assert "asset" not in flagged

@@ -30,11 +30,11 @@ PARQUET_OPTS = dict(compression="zstd", compression_level=3, statistics=True,
                     row_group_size=100_000)
 
 # Explicit schemas. Every financial amount is Float64 (thousands of USD); ids Int64.
-STRING_COLS = {"name", "city", "stalp", "bkclass", "regagnt", "cityst", "restype",
+STRING_COLS = {"name", "city", "stalp", "stname", "bkclass", "regagnt", "cityst", "restype",
                "restype1", "savr"}
 INT_COLS = {"cert", "active", "failyr"}
 DATE_COLS_FIN = {"repdte"}
-DATE_COLS_REF = {"estymd", "endefymd", "faildate"}
+DATE_COLS_REF = {"estymd", "endefymd", "faildate", "insdate"}
 
 
 def _load_rows(files: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
@@ -83,7 +83,11 @@ def _enforce_schema(df: pl.DataFrame, date_cols: set[str]) -> tuple[pl.DataFrame
     # cast failures = non-null before, null after
     failures = {c: int(df[c].is_not_null().sum() - out[c].is_not_null().sum())
                 for c in df.columns if not c.startswith("_")}
-    return out, {c: n for c, n in failures.items() if n > 0}
+    bad = {c: n for c, n in failures.items() if n > 0}
+    for c, n in bad.items():
+        if n > 0.5 * max(1, int(df[c].is_not_null().sum())):
+            log.warning("column %r: %d of its values failed the cast -> wrong dtype in schema?", c, n)
+    return out, bad
 
 
 def build_financials(paths: Paths) -> dict[str, Any]:

@@ -124,7 +124,7 @@ selection:                      # Module 4 funnel (all fitted on the train windo
   f_test_alpha: 0.001
   max_abs_spearman: 0.85        # collinearity threshold for pruning
   inner_fold_years: [1987, 1988, 1989, 1990, 1991]   # expanding windows: train <= Y, validate Y+1
-  l1_C_grid: [0.001, 0.01, 0.1, 1.0]
+  l1_C_grid: [0.0001, 0.0003, 0.001, 0.01, 0.1, 1.0]  # 0.001 was the edge of the first grid
   min_fold_share: 0.5           # stability selection: kept if selected in >= 50% of folds
   neg_sample_rate: 0.25         # speed: all positives + 25% of negatives for model fits
   mi_neg_sample_rate: 0.10      # mutual information is O(n log n) per feature

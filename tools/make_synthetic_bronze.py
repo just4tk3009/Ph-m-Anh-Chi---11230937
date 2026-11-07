@@ -88,6 +88,10 @@ def main() -> None:
                 r["EQ"] = None
             if q.year < 1991:
                 r["P3ASSET"] = None                   # structural missing (form change)
+            if q.year < 1990:
+                r["RBC1AAJ"] = 0                      # FDIC reports 0 before risk-based capital
+                r["RBCRWAJ"] = 0                      # existed: a structural zero, not a value
+            r["STNAME"] = "Georgia"
             if stress > 0 and rng.random() < 0.3:
                 r["ORE"] = None                       # informative missing
             if rng.random() < 0.001:

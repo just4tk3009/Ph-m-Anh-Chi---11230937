@@ -101,6 +101,47 @@ def check_duplicates(paths: Paths, gold: pl.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
+def cast_failures_by_column(paths: Paths) -> pl.DataFrame:
+    """Per-column count of values that became null when Silver enforced the dtype."""
+    stats_file = paths.silver / "_silver_build_stats.json"
+    rows = []
+    if stats_file.exists():
+        st = read_json(stats_file)
+        for t in ("financials", "institutions", "failures"):
+            s = st.get(t, {})
+            n = max(1, int(s.get("rows_bronze", 0) or 0))
+            for c, k in sorted(s.get("cast_failures", {}).items()):
+                rows.append({"table": t, "column": c, "values_failed": int(k),
+                             "pct_of_rows": 100.0 * int(k) / n})
+    return pl.DataFrame(rows, schema={"table": pl.String, "column": pl.String,
+                                      "values_failed": pl.Int64, "pct_of_rows": pl.Float64})
+
+
+def check_zero_share(gold: pl.DataFrame, hi: float = 95.0, lo: float = 5.0
+                     ) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Exact-zero share per column and year. A column that is ~all zero in some years
+    and rarely zero in others carries a *structural zero* (item not collected yet),
+    which must be treated as missing, not as a measured value of 0."""
+    cols = [c for c in _numeric_value_cols(gold) if c not in ("repyear",)]
+    by_year = (gold.group_by("repyear")
+               .agg([(pl.col(c) == 0).mean().mul(100).alias(c) for c in cols])
+               .sort("repyear"))
+    rows = []
+    for c in cols:
+        s = by_year[c].drop_nulls()
+        if s.len() == 0:
+            continue
+        mx, mn = float(s.max()), float(s.min())
+        zero_years = by_year.filter(pl.col(c) >= hi)["repyear"]
+        rows.append({"column": c, "zero_pct_min_year": mn, "zero_pct_max_year": mx,
+                     "years_with_zero_pct_ge_95": int(zero_years.len()),
+                     "first_year": int(zero_years.min()) if zero_years.len() else None,
+                     "last_year": int(zero_years.max()) if zero_years.len() else None,
+                     "structural_zero": bool(mx >= hi and mn <= lo)})
+    summ = pl.DataFrame(rows).sort("zero_pct_max_year", descending=True)
+    return summ, by_year
+
+
 def check_coverage(gold: pl.DataFrame) -> tuple[pl.DataFrame, dict[str, Any]]:
     per_q = gold.group_by("repdte").agg(banks=pl.col("cert").n_unique()).sort("repdte")
     qidx = (pl.col("repdte").dt.year() * 4 + pl.col("repdte").dt.quarter())
@@ -306,6 +347,8 @@ def run_audit(cfg: dict[str, Any]) -> dict[str, Any]:
     T = paths.tables
 
     dup = check_duplicates(paths, gold)
+    cast_tbl = cast_failures_by_column(paths)
+    zero_summ, zero_by_year = check_zero_share(gold)
     per_q, cov = check_coverage(gold)
     prof = profile_schema(gold)
     miss, miss_by_year = check_missingness(gold, tgt)
@@ -316,6 +359,9 @@ def run_audit(cfg: dict[str, Any]) -> dict[str, Any]:
     split_tbl = pl.DataFrame(split.stats)
 
     pl.DataFrame(dup).write_csv(T / "dq_duplicates.csv")
+    cast_tbl.write_csv(T / "dq_cast_failures.csv")
+    zero_summ.write_csv(T / "dq_zero_share.csv")
+    zero_by_year.write_csv(T / "dq_zero_share_by_year.csv")
     per_q.write_csv(T / "dq_banks_per_quarter.csv")
     prof.write_csv(T / "dq_schema_profile.csv")
     miss.write_csv(T / "dq_missingness.csv")
@@ -334,12 +380,19 @@ def run_audit(cfg: dict[str, Any]) -> dict[str, Any]:
           "All numbers below are computed by `python pipeline.py audit` on the data in "
           f"`{paths.data}`. Fences, variance filters and LOF are fitted on the TRAIN window only.\n",
           "## 1. Duplicates and lineage\n", md_table(dup),
+          "Cast failures by column (value present in Bronze, null after the dtype cast):\n",
+          md_table(cast_tbl.to_dicts()) if cast_tbl.height else "none\n",
           "## 2. Panel coverage\n", md_table([cov]),
           "## 3. Temporal split (purged) and class balance\n", md_table(split.stats),
           "## 4. Missingness and evidence for its mechanism\n",
           "_MNAR cannot be proven from observed data; the label below is a "
           "data-driven indication only._\n",
           md_table(miss.filter(pl.col("missing_pct") > 0).to_dicts()),
+          "## 4b. Structural zeros (exact-zero share per year)\n",
+          "_A column that is ~100% zero in some years and rarely zero in others is not "
+          "measured as 0: the item was not collected. Features treat it as missing._\n",
+          md_table(zero_summ.filter(pl.col("structural_zero")).to_dicts())
+          if zero_summ.height and zero_summ["structural_zero"].any() else "none found\n",
           "## 5. Zero / near-zero variance (decided on train)\n",
           f"Columns dropped: {dropped or 'none'}\n\n",
           md_table(var.head(15).to_dicts()),
