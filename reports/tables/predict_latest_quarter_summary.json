@@ -1,0 +1,10 @@
+{
+  "scored_at": "2026-11-07T16:39:39Z",
+  "quarter": "2026-06-30",
+  "banks_scored": 4313,
+  "model": "rf_weights",
+  "threshold": 0.05478758353509188,
+  "alerts_at_threshold": 4,
+  "alerts_top5pct": 216,
+  "mean_prob_pct": 0.03977355768545212
+}

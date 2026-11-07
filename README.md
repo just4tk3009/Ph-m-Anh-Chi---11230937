@@ -49,7 +49,7 @@ src/fdic_ews/
   reporting/facts.py        page-1 facts (download date, rows, periods, failures)
 tools/make_synthetic_bronze.py  SYNTHETIC data for smoke tests only (never reported)
 tests/                      pytest suite (runs offline on synthetic data)
-notebooks/colab_modules_1_2.ipynb  run everything on Google Colab
+notebooks/BFT65B_full_run_2026-11-07.ipynb  the Colab run behind reports/ (with outputs)
 reports/tables, reports/figures   generated evidence used in the report
 docs/ROADMAP.md             plan for all six parts and the report
 ```
