@@ -1,0 +1,9 @@
+feature,pruned_because_of,abs_spearman
+texas_ratio_ma4,texas_ratio,0.9404904125402775
+leverage_ratio,equity_to_assets,0.8976738686402597
+equity_to_assets_ma4,equity_to_assets,0.9766192924986139
+npl_ratio,npl_ratio_ma4,0.9303661564830066
+nim_ann_ma4,nim_ann,0.856962364123145
+liquid_assets_to_assets,liquid_assets_to_assets_ma4,0.9751631894273032
+securities_to_assets,liquid_assets_to_assets_ma4,0.8903233280351888
+loans_to_deposits,loans_to_deposits_ma4,0.9690219116186318

@@ -1,12 +1,12 @@
 rule,violations,pct_rows,banks_affected
 total assets <= 0,0,0.0,0
-deposits > total assets,143,0.02063009801460553,70
-equity > total assets,1,0.00014426641968255617,1
-negative equity (insolvent book value),393,0.05669670293524458,184
-net loans > total assets,0,0.0,0
-net loans > gross loans,4,0.0005770656787302247,2
-noncurrent loans > gross loans,0,0.0,0
-allowance < 0,4,0.0005770656787302247,2
-securities > total assets,0,0.0,0
-|ROA| > 100%,156,0.022505561470478764,23
-"leverage ratio outside [-100, 100]%",1275,0.18393968509525913,547
+deposits > total assets,5473,0.32550158944454194,1500
+equity > total assets,1,0.00005947407079198646,1
+negative equity (insolvent book value),14579,0.8670724780763707,2819
+net loans > total assets,2,0.00011894814158397293,2
+net loans > gross loans,9,0.0005352666371278782,7
+noncurrent loans > gross loans,37,0.002200540619303499,16
+allowance < 0,9,0.0005352666371278782,7
+securities > total assets,15,0.0008921110618797969,3
+|ROA| > 100%,240,0.01427377699007675,55
+"leverage ratio outside [-100, 100]%",2921,0.17372376078339247,1425

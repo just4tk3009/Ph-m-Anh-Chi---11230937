@@ -1,9 +1,9 @@
 {
-  "run_at": "2026-11-06T07:28:02Z",
+  "run_at": "2026-11-07T01:46:01Z",
   "python": "3.13.18",
   "polars": "1.35.2",
   "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
   "cpu_count": 2,
   "repeats": 5,
-  "filter_year": 2013
+  "filter_year": 2005
 }

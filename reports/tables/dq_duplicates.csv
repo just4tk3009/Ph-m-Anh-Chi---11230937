@@ -1,5 +1,5 @@
 table,rows_bronze,exact_duplicates_removed,conflicting_key_duplicates,rows_silver,cast_failures
-financials,693162,0,0,693162,0
-institutions,27835,0,0,27835,0
+financials,1682616,0,0,1682616,1682616
+institutions,27835,0,0,27835,55670
 failures,4117,0,0,3036,0
-gold (re-check),,,0,693162,
+gold (re-check),,,0,1681405,

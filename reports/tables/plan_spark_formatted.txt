@@ -1,0 +1,51 @@
+== Physical Plan ==
+AdaptiveSparkPlan (9)
++- Project (8)
+   +- Window (7)
+      +- Project (6)
+         +- Window (5)
+            +- Sort (4)
+               +- Exchange (3)
+                  +- Project (2)
+                     +- Scan parquet  (1)
+
+
+(1) Scan parquet 
+Output [11]: [asset#0, cert#2L, dep#4, eintexp#6, eq#8, intinc#10, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, repdte#29]
+Batched: true
+Location: InMemoryFileIndex [file:/content/data/silver/financials.parquet]
+ReadSchema: struct<asset:double,cert:bigint,dep:double,eintexp:double,eq:double,intinc:double,lnlsgr:double,lnlsnet:double,nclnls:double,netinc:double,repdte:date>
+
+(2) Project
+Output [12]: [cert#2L, repdte#29, asset#0, dep#4, eq#8, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, intinc#10, eintexp#6, ((year(repdte#29) * 4) + quarter(repdte#29)) AS _q#37]
+Input [11]: [asset#0, cert#2L, dep#4, eintexp#6, eq#8, intinc#10, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, repdte#29]
+
+(3) Exchange
+Input [12]: [cert#2L, repdte#29, asset#0, dep#4, eq#8, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, intinc#10, eintexp#6, _q#37]
+Arguments: hashpartitioning(cert#2L, 8), ENSURE_REQUIREMENTS, [plan_id=22]
+
+(4) Sort
+Input [12]: [cert#2L, repdte#29, asset#0, dep#4, eq#8, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, intinc#10, eintexp#6, _q#37]
+Arguments: [cert#2L ASC NULLS FIRST, repdte#29 ASC NULLS FIRST], false, 0
+
+(5) Window
+Input [12]: [cert#2L, repdte#29, asset#0, dep#4, eq#8, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, intinc#10, eintexp#6, _q#37]
+Arguments: [lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#39, lag(netinc#19, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#40, lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#42, lag(intinc#10, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#43, lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#45, lag(eintexp#6, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#46], [cert#2L], [repdte#29 ASC NULLS FIRST]
+
+(6) Project
+Output [8]: [cert#2L, repdte#29, _q#37, CASE WHEN (asset#0 > 0.0) THEN (eq#8 / asset#0) END AS equity_to_assets#47, CASE WHEN (lnlsgr#14 > 0.0) THEN (nclnls#18 / lnlsgr#14) END AS npl_ratio#48, CASE WHEN (asset#0 > 0.0) THEN ((CASE WHEN (quarter(repdte#29) = 1) THEN netinc#19 WHEN ((_q#37 - _we0#39) = 1) THEN (netinc#19 - _we1#40) END * 4.0) / asset#0) END AS roa_ann#49, CASE WHEN (asset#0 > 0.0) THEN (((CASE WHEN (quarter(repdte#29) = 1) THEN intinc#10 WHEN ((_q#37 - _we0#42) = 1) THEN (intinc#10 - _we1#43) END - CASE WHEN (quarter(repdte#29) = 1) THEN eintexp#6 WHEN ((_q#37 - _we0#45) = 1) THEN (eintexp#6 - _we1#46) END) * 4.0) / asset#0) END AS nim_ann#50, CASE WHEN (dep#4 > 0.0) THEN (lnlsnet#15 / dep#4) END AS loans_to_deposits#51]
+Input [18]: [cert#2L, repdte#29, asset#0, dep#4, eq#8, lnlsgr#14, lnlsnet#15, nclnls#18, netinc#19, intinc#10, eintexp#6, _q#37, _we0#39, _we1#40, _we0#42, _we1#43, _we0#45, _we1#46]
+
+(7) Window
+Input [8]: [cert#2L, repdte#29, _q#37, equity_to_assets#47, npl_ratio#48, roa_ann#49, nim_ann#50, loans_to_deposits#51]
+Arguments: [lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#53, lag(equity_to_assets#47, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#54, avg(equity_to_assets#47) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS equity_to_assets_ma4#55, count(equity_to_assets#47) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we0#68L, stddev_samp(equity_to_assets#47) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we1#69, lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#71, lag(npl_ratio#48, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#72, avg(npl_ratio#48) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS npl_ratio_ma4#73, count(npl_ratio#48) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we0#86L, stddev_samp(npl_ratio#48) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we1#87, lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#89, lag(roa_ann#49, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#90, avg(roa_ann#49) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS roa_ann_ma4#91, count(roa_ann#49) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we0#104L, stddev_samp(roa_ann#49) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we1#105, lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#107, lag(nim_ann#50, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#108, avg(nim_ann#50) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS nim_ann_ma4#109, count(nim_ann#50) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we0#122L, stddev_samp(nim_ann#50) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we1#123, lag(_q#37, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we0#125, lag(loans_to_deposits#51, -1, null) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -1, -1)) AS _we1#126, avg(loans_to_deposits#51) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS loans_to_deposits_ma4#127, count(loans_to_deposits#51) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we0#140L, stddev_samp(loans_to_deposits#51) windowspecdefinition(cert#2L, repdte#29 ASC NULLS FIRST, specifiedwindowframe(RowFrame, -3, currentrow$())) AS _we1#141], [cert#2L], [repdte#29 ASC NULLS FIRST]
+
+(8) Project
+Output [22]: [cert#2L, repdte#29, equity_to_assets#47, npl_ratio#48, roa_ann#49, nim_ann#50, loans_to_deposits#51, CASE WHEN ((_q#37 - _we0#53) = 1) THEN (equity_to_assets#47 - _we1#54) END AS equity_to_assets_qoq#52, equity_to_assets_ma4#55, CASE WHEN (_we0#68L >= 2) THEN _we1#69 END AS equity_to_assets_sd4#57, CASE WHEN ((_q#37 - _we0#71) = 1) THEN (npl_ratio#48 - _we1#72) END AS npl_ratio_qoq#70, npl_ratio_ma4#73, CASE WHEN (_we0#86L >= 2) THEN _we1#87 END AS npl_ratio_sd4#75, CASE WHEN ((_q#37 - _we0#89) = 1) THEN (roa_ann#49 - _we1#90) END AS roa_ann_qoq#88, roa_ann_ma4#91, CASE WHEN (_we0#104L >= 2) THEN _we1#105 END AS roa_ann_sd4#93, CASE WHEN ((_q#37 - _we0#107) = 1) THEN (nim_ann#50 - _we1#108) END AS nim_ann_qoq#106, nim_ann_ma4#109, CASE WHEN (_we0#122L >= 2) THEN _we1#123 END AS nim_ann_sd4#111, CASE WHEN ((_q#37 - _we0#125) = 1) THEN (loans_to_deposits#51 - _we1#126) END AS loans_to_deposits_qoq#124, loans_to_deposits_ma4#127, CASE WHEN (_we0#140L >= 2) THEN _we1#141 END AS loans_to_deposits_sd4#129]
+Input [33]: [cert#2L, repdte#29, _q#37, equity_to_assets#47, npl_ratio#48, roa_ann#49, nim_ann#50, loans_to_deposits#51, _we0#53, _we1#54, equity_to_assets_ma4#55, _we0#68L, _we1#69, _we0#71, _we1#72, npl_ratio_ma4#73, _we0#86L, _we1#87, _we0#89, _we1#90, roa_ann_ma4#91, _we0#104L, _we1#105, _we0#107, _we1#108, nim_ann_ma4#109, _we0#122L, _we1#123, _we0#125, _we1#126, loans_to_deposits_ma4#127, _we0#140L, _we1#141]
+
+(9) AdaptiveSparkPlan
+Output [22]: [cert#2L, repdte#29, equity_to_assets#47, npl_ratio#48, roa_ann#49, nim_ann#50, loans_to_deposits#51, equity_to_assets_qoq#52, equity_to_assets_ma4#55, equity_to_assets_sd4#57, npl_ratio_qoq#70, npl_ratio_ma4#73, npl_ratio_sd4#75, roa_ann_qoq#88, roa_ann_ma4#91, roa_ann_sd4#93, nim_ann_qoq#106, nim_ann_ma4#109, nim_ann_sd4#111, loans_to_deposits_qoq#124, loans_to_deposits_ma4#127, loans_to_deposits_sd4#129]
+Arguments: isFinalPlan=false
+
+

@@ -1,0 +1,31 @@
+{
+  "built_at": "2026-11-07T03:43:30Z",
+  "target": "target_fail_4q",
+  "selected_features": [
+    "texas_ratio_sd4",
+    "equity_to_assets",
+    "texas_ratio",
+    "nonaccrual_to_assets",
+    "roa_ann_sd4",
+    "liquid_assets_to_assets_ma4",
+    "roa_ann_ma4",
+    "roe_ann",
+    "equity_to_assets_sd4",
+    "alll_to_loans",
+    "ore_to_assets",
+    "efficiency_ratio",
+    "npl_ratio_sd4",
+    "log_assets",
+    "equity_to_assets_qoq",
+    "texas_ratio_qoq",
+    "pd90_to_assets"
+  ],
+  "stage_sizes": {
+    "0 all candidates": 50,
+    "1 variance filter": 49,
+    "2 F-test + MI + |rho|<=0.85": 36,
+    "3 L1 stability selection": 21,
+    "4 permutation importance > 0": 17
+  },
+  "best_C": 0.001
+}

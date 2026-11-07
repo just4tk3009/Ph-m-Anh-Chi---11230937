@@ -1,0 +1,17 @@
+exit_type,exit_decade,banks
+active,2020,4313
+failure,1980,1471
+failure,1990,789
+failure,2000,236
+failure,2010,327
+failure,2020,16
+merger_or_other_exit,1980,3242
+merger_or_other_exit,1990,6704
+merger_or_other_exit,2000,3344
+merger_or_other_exit,2010,2531
+merger_or_other_exit,2020,908
+stopped_unexplained,1980,19
+stopped_unexplained,1990,44
+stopped_unexplained,2000,71
+stopped_unexplained,2010,34
+stopped_unexplained,2020,13

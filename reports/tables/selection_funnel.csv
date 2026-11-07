@@ -1,0 +1,6 @@
+stage,n_features,note,valid_pr_auc,valid_roc_auc,fit_seconds
+0 all candidates,50,all engineered features,0.12291859717035113,0.9131598663253845,25.96995215600009
+1 variance filter,49,dropped: ['pd30_89_to_assets'],0.12291859717035113,0.9131598663253845,23.685995922000075
+2 F-test + MI + |rho|<=0.85,36,"5 failed univariate, 8 pruned as collinear",0.1267100311976354,0.914493260167234,13.078342040999814
+3 L1 stability selection,21,best C=0.001,0.1293118308410297,0.9158043353646396,6.470501583000441
+4 permutation importance > 0,17,"HGB, PR-AUC drop on validation",0.12547664822986324,0.9147794153830445,6.871873329000664

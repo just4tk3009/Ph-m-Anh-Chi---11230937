@@ -6,7 +6,7 @@ SORT BY [col("repdte"), col("cert")]
         LEFT JOIN:
         LEFT PLAN ON: [col("cert"), col("_qidx")]
           simple π 60/60 ["cert", "repdte", "asset", ... 57 other columns]
-            CACHE[id: b9fd9890-d061-4478-849a-6f5b5b0c1658]
+            CACHE[id: c45bd1eb-cd5c-406e-ae7e-ce4dada27e07]
               simple π 60/60 ["cert", "repdte", "asset", ... 57 other columns]
                 simple π 60/60 ["cert", "repdte", "asset", ... 57 other columns]
                    WITH_COLUMNS:
@@ -34,12 +34,12 @@ SORT BY [col("repdte"), col("cert")]
                                                WITH_COLUMNS:
                                                [[(col("eq")) + (col("lnatres"))].alias("__POLARS_CSER_0x425573f787710472"), [(col("dep")) > (0.0)].alias("__POLARS_CSER_0xe03da574cd0374b"), [(col("lnlsgr")) > (0.0)].alias("__POLARS_CSER_0xe068d0301639b82c"), [(col("asset")) > (0.0)].alias("__POLARS_CSER_0x7a2f845f50d2003f")] 
                                                 SORT BY [col("cert"), col("repdte")]
-                                                  Parquet SCAN [/content/data/gold/bank_quarter_panel/repyear=2005/part-00000-2e99bc9b-4b29-40e4-ae80-9cb174123a88-c000.zstd.parquet, ... 24 other sources]
-                                                  PROJECT 34/47 COLUMNS
+                                                  Parquet SCAN [/content/data/gold/bank_quarter_panel/repyear=1988/part-00000-1e552650-6649-4f2d-b1ee-2ad94e82c4be-c000.zstd.parquet, ... 42 other sources]
+                                                  PROJECT 34/55 COLUMNS
         RIGHT PLAN ON: [col("cert"), col("_qidx")]
           SELECT [col("cert"), [(col("_qidx")) + (4)], col("asset").alias("_asset_lag4")]
             simple π 3/3 ["cert", "_qidx", "asset"]
-              CACHE[id: b9fd9890-d061-4478-849a-6f5b5b0c1658]
+              CACHE[id: c45bd1eb-cd5c-406e-ae7e-ce4dada27e07]
                 simple π 60/60 ["cert", "repdte", "asset", ... 57 other columns]
                   simple π 60/60 ["cert", "repdte", "asset", ... 57 other columns]
                      WITH_COLUMNS:
@@ -67,6 +67,6 @@ SORT BY [col("repdte"), col("cert")]
                                                  WITH_COLUMNS:
                                                  [[(col("eq")) + (col("lnatres"))].alias("__POLARS_CSER_0x425573f787710472"), [(col("dep")) > (0.0)].alias("__POLARS_CSER_0xe03da574cd0374b"), [(col("lnlsgr")) > (0.0)].alias("__POLARS_CSER_0xe068d0301639b82c"), [(col("asset")) > (0.0)].alias("__POLARS_CSER_0x7a2f845f50d2003f")] 
                                                   SORT BY [col("cert"), col("repdte")]
-                                                    Parquet SCAN [/content/data/gold/bank_quarter_panel/repyear=2005/part-00000-2e99bc9b-4b29-40e4-ae80-9cb174123a88-c000.zstd.parquet, ... 24 other sources]
-                                                    PROJECT 34/47 COLUMNS
+                                                    Parquet SCAN [/content/data/gold/bank_quarter_panel/repyear=1988/part-00000-1e552650-6649-4f2d-b1ee-2ad94e82c4be-c000.zstd.parquet, ... 42 other sources]
+                                                    PROJECT 34/55 COLUMNS
         END LEFT JOIN
