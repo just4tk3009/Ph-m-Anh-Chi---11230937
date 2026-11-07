@@ -82,3 +82,6 @@ def test_run_models_end_to_end(tmp_path):
     assert (cfg["_paths"].data / "models" / "ews_model.joblib").exists()
     costs = json.loads((T / "model_costs.json").read_text(encoding="utf-8"))
     assert costs["failures_with_cost"] > 0 and costs["cfn_per_positive_row_thousand_usd"] > 0
+    from fdic_ews.modeling.predict import run_predict
+    s = run_predict(cfg)
+    assert s["banks_scored"] > 0 and s["model"] == res["chosen"]

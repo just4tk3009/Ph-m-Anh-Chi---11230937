@@ -16,6 +16,7 @@ python pipeline.py select                               # Module 4: feature-sele
 python pipeline.py freedman                             # Module 4: Freedman simulation
 python pipeline.py model                                # Module 5: CV, costs, threshold, single test
 python pipeline.py mllib                                # Module 5: Spark MLlib vs scikit-learn demo
+python pipeline.py predict --quarter 2026Q2             # Part 6: score one quarter with the frozen model
 python pipeline.py facts                                # page-1 facts: rows, periods, failures
 python pipeline.py all                                  # silver -> gold -> benchmark -> audit -> leakage -> features -> bench3
 
@@ -41,12 +42,13 @@ log = get_logger("cli")
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("stage", choices=["probe", "ingest", "silver", "gold", "benchmark",
-                                      "audit", "leakage", "features", "bench3", "select", "freedman", "model", "mllib", "facts", "all"])
+                                      "audit", "leakage", "features", "bench3", "select", "freedman", "model", "mllib", "predict", "facts", "all"])
     ap.add_argument("--config", default=None)
     ap.add_argument("--data-dir", default=None)
     ap.add_argument("--reports-dir", default=None)
     ap.add_argument("--start", default=None, help="first quarter, e.g. 2001Q1")
     ap.add_argument("--end", default=None, help="last quarter, e.g. 2025Q2")
+    ap.add_argument("--quarter", default=None, help="predict: quarter to score, e.g. 2026Q2")
     ap.add_argument("--force", action="store_true", help="re-download completed partitions")
     ap.add_argument("--skip-reference", action="store_true",
                     help="ingest: do not (re)download institutions and failures")
@@ -64,7 +66,7 @@ def main(argv: list[str] | None = None) -> None:
         counts = ingest_financials(cfg, a.start, a.end, force=a.force)
         log.info("downloaded %d quarters, %d rows", len(counts), sum(counts.values()))
     stages = (["silver", "gold", "benchmark", "audit", "leakage", "features", "bench3",
-               "select", "freedman", "model", "mllib", "facts"]
+               "select", "freedman", "model", "mllib", "predict", "facts"]
               if a.stage == "all" else [a.stage])
     for st in stages:
         if st == "silver":
@@ -97,6 +99,9 @@ def main(argv: list[str] | None = None) -> None:
         elif st == "mllib":
             from fdic_ews.modeling.mllib_demo import run_mllib
             print(json.dumps(run_mllib(cfg), indent=2, default=str))
+        elif st == "predict":
+            from fdic_ews.modeling.predict import run_predict
+            print(json.dumps(run_predict(cfg, a.quarter), indent=2, default=str))
         elif st == "facts":
             from fdic_ews.reporting.facts import run_facts
             print(json.dumps(run_facts(cfg), indent=2, default=str))

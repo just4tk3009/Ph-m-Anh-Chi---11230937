@@ -122,6 +122,8 @@ a missed failure estimated from the FDIC `COST` field of development-period fail
 (`model_costs.json`, sensitivity in `model_cost_sensitivity.csv`). The choice is frozen in
 `model_choice.json` before the test window 2009Q1-2025Q2 is scored; every test evaluation is
 appended to `data/gold/_test_evaluations.jsonl`. Results: `reports/module5_models.md`.
+`python pipeline.py predict [--quarter 2026Q2]` scores one quarter (default: the latest) with
+the frozen model in `data/models/ews_model.joblib`, without refitting.
 `python pipeline.py mllib` fits the same logistic regression in Spark MLlib and
 scikit-learn on development data and reports runtime and agreement.
 
