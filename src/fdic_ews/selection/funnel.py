@@ -53,7 +53,7 @@ log = get_logger("selection.funnel")
 
 def _prep(iqr_k: float) -> Pipeline:
     from sklearn.preprocessing import RobustScaler
-    return Pipeline([("clip", IQRClipper(iqr_k)), ("impute", SimpleImputer(strategy="median")),
+    return Pipeline([("clip", IQRClipper(iqr_k)), ("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
                      ("scale", RobustScaler())])
 
 
@@ -124,15 +124,19 @@ def stage3_stability(split: TemporalSplit, cols: list[str], tgt: str, sc: dict[s
 
 
 def mdi_vs_permutation(Xtr, ytr, Xva, yva, cols: list[str], seed: int,
-                       neg_rate: float) -> pd.DataFrame:
+                       neg_rate: float, valid_neg_rate: float = 1.0) -> pd.DataFrame:
+    """The audit compares *rankings* of importances, so it is scored on all validation
+    positives + a share of validation negatives (speed: 51 columns x 5 repeats of a
+    200-tree forest on 630k rows took ~1 h on Colab)."""
     rng = np.random.default_rng(seed)
     Xtr, ytr = _sample_negatives(Xtr, ytr, neg_rate, seed)
+    Xva, yva = _sample_negatives(Xva, yva, valid_neg_rate, seed + 7)
     Xtr = Xtr[cols].copy()
     Xva = Xva[cols].copy()
     for X in (Xtr, Xva):
         X["noise_continuous"] = rng.standard_normal(len(X))
         X["noise_binary"] = rng.integers(0, 2, len(X)).astype(float)
-    imp = SimpleImputer(strategy="median").fit(Xtr)
+    imp = SimpleImputer(strategy="median", keep_empty_features=True).fit(Xtr)
     Ztr = pd.DataFrame(imp.transform(Xtr), columns=Xtr.columns)
     Zva = pd.DataFrame(imp.transform(Xva), columns=Xva.columns)
     rf = RandomForestClassifier(n_estimators=200, min_samples_leaf=20, max_features="sqrt",
@@ -178,7 +182,7 @@ def run_selection(cfg: dict[str, Any]) -> dict[str, Any]:
     # ---- stage 1: unsupervised
     nc = NearConstantDropper(float(q["near_constant_share"])).fit(Xtr)
     s1 = list(nc.keep_)
-    vt = VarianceThreshold(0.0).fit(SimpleImputer(strategy="median").fit_transform(Xtr[s1]))
+    vt = VarianceThreshold(0.0).fit(SimpleImputer(strategy="median", keep_empty_features=True).fit_transform(Xtr[s1]))
     s1 = [c for c, keep in zip(s1, vt.get_support()) if keep]
     record("1 variance filter", s1, f"dropped: {sorted(set(feats_all) - set(s1)) or 'none'}")
 
@@ -233,7 +237,8 @@ def run_selection(cfg: dict[str, Any]) -> dict[str, Any]:
     record("4 permutation importance > 0", kept4, "HGB, PR-AUC drop on validation")
 
     # ---- audit: MDI vs permutation with noise controls
-    audit = mdi_vs_permutation(Xtr, ytr, Xva, yva, s1, seed, float(sc["neg_sample_rate"]))
+    audit = mdi_vs_permutation(Xtr, ytr, Xva, yva, s1, seed, float(sc["neg_sample_rate"]),
+                               float(sc.get("audit_valid_neg_rate", 1.0)))
     audit.to_csv(paths.tables / "selection_mdi_vs_permutation.csv", index=False)
 
     fdf = pd.DataFrame(funnel)

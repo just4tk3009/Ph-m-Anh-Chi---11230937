@@ -129,9 +129,38 @@ selection:                      # Module 4 funnel (all fitted on the train windo
   neg_sample_rate: 0.25         # speed: all positives + 25% of negatives for model fits
   mi_neg_sample_rate: 0.10      # mutual information is O(n log n) per feature
   perm_repeats: 5
+  audit_valid_neg_rate: 0.2     # MDI-vs-permutation audit: all valid positives + 20% of negatives
   min_features: 5
 
 freedman:                       # Module 4 simulation on pure noise
   grid: [[50, 200], [200, 200], [1000, 200]]
   k: 10
   reps: 200
+
+model:                          # Module 5 (Part 5). Development period only, test used once.
+  # Time-aware CV inside development: expanding windows, purged by the label horizon.
+  # [labels of training rows known by, validation from, validation to]
+  cv_folds:
+    - [1988-12-31, 1989-03-31, 1990-12-31]
+    - [1990-12-31, 1991-03-31, 1992-12-31]
+    - [1992-12-31, 1993-03-31, 1999-12-31]
+    - [1999-12-31, 2000-03-31, 2007-12-31]
+  selection_metric: pr_auc      # mean over CV folds; Recall@top-k reported next to it
+  recall_top_k_pct: [1, 5, 10]  # alert budget: top k% of banks in each quarter
+  train_neg_sample_rate: 0.25   # speed: all positives + 25% of negatives (same rows for every model)
+  undersample_neg_rate: 0.04    # imbalance strategy "undersample": ~1:1 positives:negatives in train
+  baseline_features: [equity_to_assets, npl_ratio, roa_ann, liquid_assets_to_assets]
+  rf: {n_estimators: 300, min_samples_leaf: 50, max_features: sqrt}
+  hgb: {max_iter: 300, learning_rate: 0.05, max_leaf_nodes: 31, l2_regularization: 1.0,
+        min_samples_leaf: 100}
+  calibration: sigmoid          # Platt scaling on the validation window (few positives -> not isotonic)
+  costs:
+    # CFN is estimated from the data: FDIC estimated loss (COST, $ thousands) of the failures
+    # that fall in the development period, times the share of that loss an earlier
+    # supervisory action could avoid (assumption), spread over the positive quarters of a
+    # failing bank. CFP (cost of a false alarm = one targeted examination) is an assumption.
+    avoidable_loss_share: 0.25
+    cfp_thousand_usd: 50
+    sensitivity_avoidable_loss_share: [0.10, 0.25, 0.50]
+    sensitivity_cfp_thousand_usd: [10, 25, 50, 100, 250]
+  spark_mllib: true             # MLlib logistic-regression demo on train -> valid (dev only)

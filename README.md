@@ -14,15 +14,16 @@ imbalanced early-warning model.
 > Failures and Institutions tables. Development period 1984Q1-2007Q4, gap 2008, test
 > period 2009Q1-2025Q2 (see `config/config.yaml`, `reports/tables/report_page1_facts.md`).
 >
-> Status: Parts 1-4 implemented (acquisition, storage + benchmark, data quality and exits,
-> Polars/Pandas/PySpark processing with execution plans, leak-free features and selection).
-> Part 5 (models, MLlib demo, cost-based threshold) follows `docs/ROADMAP.md`.
+> Status: Parts 1-5 implemented (acquisition, storage + benchmark, data quality and exits,
+> Polars/Pandas/PySpark processing with execution plans, leak-free features and selection,
+> models with time-aware validation, Spark MLlib demo, cost-based threshold, single test).
 
 ## Repository layout
 
 ```
 config/config.yaml          single source of truth: fields, dates, split, thresholds
-pipeline.py                 CLI: probe | ingest | silver | gold | benchmark | audit | leakage | all
+pipeline.py                 CLI: probe | ingest | silver | gold | benchmark | audit | leakage |
+                            features | bench3 | select | freedman | model | mllib | facts | all
 src/fdic_ews/
   ingestion/fdic_client.py  HTTP client: retries, backoff, pagination, completeness check
   ingestion/fdic_ingestion.py  Bronze writer + manifest (lineage, resumable)
@@ -39,6 +40,12 @@ src/fdic_ews/
                             Polars naive/optimised plans and Spark formatted plan
   selection/funnel.py       variance -> F-test/MI + collinearity -> L1 stability -> permutation
   selection/freedman.py     simulation: feature selection before vs inside CV
+  modeling/train_eval.py    baseline vs LR / RF / HGB (+ imbalance strategies), purged
+                            expanding-window CV on development, Platt calibration, cost-
+                            minimising threshold, single logged test evaluation
+  modeling/costs.py         CFN from FDIC failure COST, CFP assumption, cost curve
+  modeling/metrics.py       PR-AUC, Recall@top-k% per quarter, confusion at a threshold
+  modeling/mllib_demo.py    same logistic regression in Spark MLlib and scikit-learn
   reporting/facts.py        page-1 facts (download date, rows, periods, failures)
 tools/make_synthetic_bronze.py  SYNTHETIC data for smoke tests only (never reported)
 tests/                      pytest suite (runs offline on synthetic data)
@@ -56,7 +63,8 @@ pip install -r requirements.txt
 python pipeline.py probe                              # 1. are all configured fields served by the API?
 python pipeline.py ingest --start 2023Q1 --end 2023Q4 # 2. trial download (4 quarters)
 python pipeline.py ingest                             # 3. full range in config.yaml (~1 h, resumable)
-python pipeline.py all                                # 4. silver -> gold -> benchmark -> audit -> leakage -> features -> bench3
+python pipeline.py all                                # 4. silver -> gold -> benchmark -> audit -> leakage ->
+                                                      #    features -> bench3 -> select -> freedman -> model -> mllib -> facts
 pytest -q                                             # offline tests on synthetic data
 ```
 
@@ -102,6 +110,20 @@ use a time-based window `(t-12 months, t]`, so they never look forward and never
 stretch across a missing quarter. `features_lookahead_check.csv` shows that recomputing all
 features on data truncated at the train cut-off changes nothing (and a unit test proves the
 check catches a deliberately leaky feature).
+
+## Module 5: models, threshold and the single test
+
+`python pipeline.py model` compares a baseline (logistic regression on four classic ratios)
+with logistic regression, random forest and gradient boosting (no re-weighting, class
+weights, undersampling) by expanding-window, purged cross-validation inside 1984-2007
+(`model_cv_summary.csv`). The chosen model is fitted on 1984-1992, Platt-calibrated on
+1993-2007, and its alarm threshold minimises the expected cost on 1993-2007, with the cost of
+a missed failure estimated from the FDIC `COST` field of development-period failures
+(`model_costs.json`, sensitivity in `model_cost_sensitivity.csv`). The choice is frozen in
+`model_choice.json` before the test window 2009Q1-2025Q2 is scored; every test evaluation is
+appended to `data/gold/_test_evaluations.jsonl`. Results: `reports/module5_models.md`.
+`python pipeline.py mllib` fits the same logistic regression in Spark MLlib and
+scikit-learn on development data and reports runtime and agreement.
 
 ## Data source
 

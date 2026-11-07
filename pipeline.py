@@ -14,6 +14,8 @@ python pipeline.py features                             # Module 3: CAMELS featu
 python pipeline.py bench3                               # Module 3: Pandas vs Polars vs PySpark
 python pipeline.py select                               # Module 4: feature-selection funnel
 python pipeline.py freedman                             # Module 4: Freedman simulation
+python pipeline.py model                                # Module 5: CV, costs, threshold, single test
+python pipeline.py mllib                                # Module 5: Spark MLlib vs scikit-learn demo
 python pipeline.py facts                                # page-1 facts: rows, periods, failures
 python pipeline.py all                                  # silver -> gold -> benchmark -> audit -> leakage -> features -> bench3
 
@@ -39,7 +41,7 @@ log = get_logger("cli")
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("stage", choices=["probe", "ingest", "silver", "gold", "benchmark",
-                                      "audit", "leakage", "features", "bench3", "select", "freedman", "facts", "all"])
+                                      "audit", "leakage", "features", "bench3", "select", "freedman", "model", "mllib", "facts", "all"])
     ap.add_argument("--config", default=None)
     ap.add_argument("--data-dir", default=None)
     ap.add_argument("--reports-dir", default=None)
@@ -62,7 +64,7 @@ def main(argv: list[str] | None = None) -> None:
         counts = ingest_financials(cfg, a.start, a.end, force=a.force)
         log.info("downloaded %d quarters, %d rows", len(counts), sum(counts.values()))
     stages = (["silver", "gold", "benchmark", "audit", "leakage", "features", "bench3",
-               "select", "freedman", "facts"]
+               "select", "freedman", "model", "mllib", "facts"]
               if a.stage == "all" else [a.stage])
     for st in stages:
         if st == "silver":
@@ -89,6 +91,12 @@ def main(argv: list[str] | None = None) -> None:
         elif st == "freedman":
             from fdic_ews.selection.freedman import run_freedman
             print(run_freedman(cfg))
+        elif st == "model":
+            from fdic_ews.modeling.train_eval import run_models
+            print(json.dumps(run_models(cfg), indent=2, default=str))
+        elif st == "mllib":
+            from fdic_ews.modeling.mllib_demo import run_mllib
+            print(json.dumps(run_mllib(cfg), indent=2, default=str))
         elif st == "facts":
             from fdic_ews.reporting.facts import run_facts
             print(json.dumps(run_facts(cfg), indent=2, default=str))
