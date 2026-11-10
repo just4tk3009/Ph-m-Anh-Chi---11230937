@@ -17,6 +17,7 @@ python pipeline.py freedman                             # Module 4: Freedman sim
 python pipeline.py model                                # Module 5: CV, costs, threshold, single test
 python pipeline.py mllib                                # Module 5: Spark MLlib vs scikit-learn demo
 python pipeline.py predict --quarter 2026Q2             # Part 6: score one quarter with the frozen model
+python pipeline.py check                                # logic checks on the real outputs
 python pipeline.py facts                                # page-1 facts: rows, periods, failures
 python pipeline.py all                                  # silver -> gold -> benchmark -> audit -> leakage -> features -> bench3
 
@@ -42,7 +43,7 @@ log = get_logger("cli")
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("stage", choices=["probe", "ingest", "silver", "gold", "benchmark",
-                                      "audit", "leakage", "features", "bench3", "select", "freedman", "model", "mllib", "predict", "facts", "all"])
+                                      "audit", "leakage", "features", "bench3", "select", "freedman", "model", "mllib", "predict", "facts", "check", "all"])
     ap.add_argument("--config", default=None)
     ap.add_argument("--data-dir", default=None)
     ap.add_argument("--reports-dir", default=None)
@@ -66,7 +67,7 @@ def main(argv: list[str] | None = None) -> None:
         counts = ingest_financials(cfg, a.start, a.end, force=a.force)
         log.info("downloaded %d quarters, %d rows", len(counts), sum(counts.values()))
     stages = (["silver", "gold", "benchmark", "audit", "leakage", "features", "bench3",
-               "select", "freedman", "model", "mllib", "predict", "facts"]
+               "select", "freedman", "model", "mllib", "predict", "facts", "check"]
               if a.stage == "all" else [a.stage])
     for st in stages:
         if st == "silver":
@@ -102,6 +103,9 @@ def main(argv: list[str] | None = None) -> None:
         elif st == "predict":
             from fdic_ews.modeling.predict import run_predict
             print(json.dumps(run_predict(cfg, a.quarter), indent=2, default=str))
+        elif st == "check":
+            from fdic_ews.quality.sanity import run_checks
+            print(json.dumps(run_checks(cfg), indent=2, default=str))
         elif st == "facts":
             from fdic_ews.reporting.facts import run_facts
             print(json.dumps(run_facts(cfg), indent=2, default=str))

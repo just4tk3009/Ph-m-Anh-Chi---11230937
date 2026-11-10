@@ -85,3 +85,8 @@ def test_run_models_end_to_end(tmp_path):
     from fdic_ews.modeling.predict import run_predict
     s = run_predict(cfg)
     assert s["banks_scored"] > 0 and s["model"] == res["chosen"]
+    from fdic_ews.quality.sanity import run_checks
+    out = run_checks(cfg)
+    # the synthetic panel is too small for the two scope checks; every logic check must pass
+    assert set(out["failed_checks"]) <= {"every quarter 1984Q1..2026Q2 present",
+                                          "test has >= 50 failed banks"}, out

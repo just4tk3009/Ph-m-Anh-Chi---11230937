@@ -46,6 +46,8 @@ src/fdic_ews/
   modeling/costs.py         CFN from FDIC failure COST, CFP assumption, cost curve
   modeling/metrics.py       PR-AUC, Recall@top-k% per quarter, confusion at a threshold
   modeling/mllib_demo.py    same logistic regression in Spark MLlib and scikit-learn
+  quality/sanity.py         27 logic checks on the real outputs (keys, label, split, features,
+                            single test look, report numbers vs data)
   reporting/facts.py        page-1 facts (download date, rows, periods, failures)
 tools/make_synthetic_bronze.py  SYNTHETIC data for smoke tests only (never reported)
 tests/                      pytest suite (runs offline on synthetic data)
@@ -65,6 +67,7 @@ python pipeline.py ingest --start 2023Q1 --end 2023Q4 # 2. trial download (4 qua
 python pipeline.py ingest                             # 3. full range in config.yaml (~1 h, resumable)
 python pipeline.py all                                # 4. silver -> gold -> benchmark -> audit -> leakage ->
                                                       #    features -> bench3 -> select -> freedman -> model -> mllib -> facts
+python pipeline.py check                              # 5. logic checks on the real outputs -> sanity_checks.md
 pytest -q                                             # offline tests on synthetic data
 ```
 
