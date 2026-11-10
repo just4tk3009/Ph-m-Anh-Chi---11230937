@@ -106,3 +106,19 @@ def test_structural_zero_detected_and_treated_as_missing(synthetic_cfg):
     flagged = set(summ.filter(pl.col("structural_zero"))["column"])
     assert {"rbc1aaj", "rbcrwaj"} <= flagged
     assert "asset" not in flagged
+
+
+def test_gold_refuses_duplicate_failure_certs(synthetic_cfg, tmp_path):
+    """A second failure record for one CERT would duplicate bank-quarters: Gold must stop."""
+    import shutil
+    import pytest
+    from fdic_ews.storage.gold import _assert_join_inputs
+    from fdic_ews.utils.config import Paths
+    src = synthetic_cfg["_paths"]
+    p = Paths(data=tmp_path / "d", reports=tmp_path / "r").ensure()
+    shutil.copytree(src.silver, p.silver, dirs_exist_ok=True)
+    _assert_join_inputs(p)                                     # clean Silver passes
+    f = pl.read_parquet(p.silver / "failures.parquet")
+    pl.concat([f, f.head(1)]).write_parquet(p.silver / "failures.parquet")
+    with pytest.raises(AssertionError, match="CERT not unique"):
+        _assert_join_inputs(p)

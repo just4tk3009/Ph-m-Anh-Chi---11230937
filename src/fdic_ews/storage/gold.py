@@ -61,6 +61,17 @@ def _failure_list_asof(paths: Paths) -> date:
     return date.today()
 
 
+def _assert_join_inputs(paths: Paths) -> None:
+    f = pl.read_parquet(paths.silver / "failures.parquet")
+    assert f["cert"].null_count() == 0, "failures: rows without CERT reached Silver"
+    assert f["cert"].is_duplicated().sum() == 0, "failures: CERT not unique -> join would duplicate rows"
+    if "restype" in f.columns:
+        bad = f.filter(pl.col("restype").str.to_uppercase() != "FAILURE").height
+        assert bad == 0, f"failures: {bad} non-FAILURE records (e.g. assistance) reached Gold"
+    i = pl.read_parquet(paths.silver / "institutions.parquet", columns=["cert"])
+    assert i["cert"].is_duplicated().sum() == 0, "institutions: CERT not unique -> join would duplicate rows"
+
+
 def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
     paths: Paths = cfg["_paths"]
     h = int(cfg["gold"]["label_horizon_quarters"])
@@ -76,6 +87,10 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
     fail = (pl.scan_parquet(paths.silver / "failures.parquet")
             .select("cert", "faildate", pl.col("name").alias("fail_name"))
             .filter(pl.col("faildate").is_not_null()))
+
+    # Join cardinality and event definition are asserted, not assumed: Silver already keeps
+    # only RESTYPE == FAILURE and one failure per CERT, and Gold refuses to build otherwise.
+    _assert_join_inputs(paths)
 
     panel = (fin.join(inst, on="cert", how="left")
              .join(fail, on="cert", how="left")
@@ -114,6 +129,10 @@ def build_gold(cfg: dict[str, Any]) -> dict[str, Any]:
             .select(*KEY_COLS, pl.exclude(KEY_COLS))
             .sort(["repdte", "cert"])
             .collect())
+    n_fin = fin.select(pl.len()).collect().item()
+    assert gold.height == n_fin - post_fail_df.height, (
+        f"join changed the row count: {gold.height} != {n_fin} - {post_fail_df.height}")
+    assert gold.select(KEY_COLS).is_duplicated().sum() == 0, "gold: (cert, repdte) not unique"
 
     gold, exit_stats = classify_exits(paths, gold)
 

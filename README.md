@@ -112,7 +112,10 @@ de-cumulated to quarterly flows (null across reporting gaps) and annualised. Rol
 use a time-based window `(t-12 months, t]`, so they never look forward and never silently
 stretch across a missing quarter. `features_lookahead_check.csv` shows that recomputing all
 features on data truncated at the train cut-off changes nothing (and a unit test proves the
-check catches a deliberately leaky feature).
+check catches a deliberately leaky feature). The four-engine benchmark (`features/engines.py`) deliberately
+uses row-based windows, the only window type with identical semantics in all four APIs; it
+proves the engines agree on the same workload, not that they reproduce the production features,
+whose gap-aware windows are tested separately (`test_rolling_window_is_gap_aware_and_ignores_nulls`).
 
 ## Module 5: models, threshold and the single test
 
