@@ -111,7 +111,10 @@ def run_checks(cfg: dict[str, Any]) -> dict[str, Any]:
     fcols = [c for c in feats.columns if c not in LEAKY_COLUMNS and not c.startswith("target_")]
     check("features", "features.parquet has one row per gold row",
           lambda: (feats.height == gold.height, f"{feats.height} vs {gold.height}"))
-    sel = json.loads((paths.gold / "selected_features.json").read_text(encoding="utf-8"))
+    sel_f = paths.gold / "selected_features.json"
+    if not sel_f.exists():                       # data folder rebuilt: use the report copy
+        sel_f = T / "selected_features.json"
+    sel = json.loads(sel_f.read_text(encoding="utf-8"))
     bad = [f for f in sel["selected_features"] if f in LEAKY_COLUMNS or f.startswith("target_")]
     check("features", "selected features contain no leaky column", lambda: (not bad, bad or "none"))
     inf_cols = [c for c in fcols if feats.schema[c].is_float()
