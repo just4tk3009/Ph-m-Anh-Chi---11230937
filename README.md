@@ -141,12 +141,36 @@ income-statement items are year-to-date.
 
 ## References and acknowledgements
 
-- FDIC (2026). *BankFind Suite API documentation*. https://api.fdic.gov/banks/docs/
-- López de Prado, M. (2018). *Advances in Financial Machine Learning*. Wiley (purging, embargo).
-- Kuhn, M., & Johnson, K. (2019). *Feature Engineering and Selection*. CRC Press.
-- Breunig, M. et al. (2000). LOF: identifying density-based local outliers. *SIGMOD*.
-- Tukey, J. W. (1977). *Exploratory Data Analysis*. Addison-Wesley (IQR fences).
-- Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. *JMLR* 12.
-- Polars, PyArrow, delta-rs (deltalake) open-source documentation.
-- **AI assistance:** parts of this code were drafted with Claude (Anthropic), then reviewed,
-  run and modified by the author. All reported numbers come from the author's own runs.
+Sources used in the code and in the report (APA 7; the same list as the report's reference list).
+
+- Anthropic. (2026). *Claude* [Large language model]. https://claude.ai
+- Armbrust, M., Das, T., Sun, L., Yavuz, B., Zhu, S., Murthy, M., Torres, J., van Hovell, H., Ionescu, A., Łuszczak, A., Świtakowski, M., Szafrański, M., Li, X., Ueshin, T., Mokhtar, M., Boncz, P., Ghodsi, A., Paranjpye, S., Senster, P., … Zaharia, M. (2020). Delta Lake: High-performance ACID table storage over cloud object stores. *Proceedings of the VLDB Endowment, 13*(12), 3411-3424. https://vldb.org/pvldb/vol13/p3411-armbrust.pdf
+- Board of Governors of the Federal Reserve System. (2023). *Review of the Federal Reserve's supervision and regulation of Silicon Valley Bank*. https://www.federalreserve.gov/publications/files/svb-review-20230428.pdf
+- Breiman, L. (2001). Random forests. *Machine Learning, 45*(1), 5-32. https://doi.org/10.1023/A:1010933404324
+- Breunig, M. M., Kriegel, H.-P., Ng, R. T., & Sander, J. (2000). LOF: Identifying density-based local outliers. In *Proceedings of the 2000 ACM SIGMOD International Conference on Management of Data* (pp. 93-104). ACM. https://doi.org/10.1145/342009.335388
+- Cole, R. A., & White, L. J. (2012). Déjà vu all over again: The causes of U.S. commercial bank failures this time around. *Journal of Financial Services Research, 42*(1-2), 5-29. https://doi.org/10.1007/s10693-011-0116-9
+- Elkan, C. (2001). The foundations of cost-sensitive learning. In *Proceedings of the Seventeenth International Joint Conference on Artificial Intelligence* (pp. 973-978). Morgan Kaufmann. https://mlanthology.org/ijcai/2001/elkan2001ijcai-foundations
+- Federal Deposit Insurance Corporation. (n.d.). *BankFind Suite API documentation*. Retrieved November 7, 2026, from https://api.fdic.gov/banks/docs/
+- Freedman, D. A. (1983). A note on screening regression equations. *The American Statistician, 37*(2), 152-155. https://doi.org/10.1080/00031305.1983.10482729
+- Kuhn, M., & Johnson, K. (2019). *Feature engineering and selection: A practical approach for predictive models*. CRC Press. https://doi.org/10.1201/9781315108230
+- López de Prado, M. (2018). *Advances in financial machine learning*. Wiley. https://www.oreilly.com/library/view/-/9781119482086/
+- Martin, D. (1977). Early warning of bank failure: A logit regression approach. *Journal of Banking & Finance, 1*(3), 249-276. https://doi.org/10.1016/0378-4266(77)90022-X
+- Meinshausen, N., & Bühlmann, P. (2010). Stability selection. *Journal of the Royal Statistical Society Series B: Statistical Methodology, 72*(4), 417-473. https://doi.org/10.1111/j.1467-9868.2010.00740.x
+- National Assembly of Vietnam. (2024). *Law on Credit Institutions* (Law No. 32/2024/QH15). https://english.luatvietnam.vn/tai-chinh/law-on-credit-institution-no-32-2024-qh15-296639-d1.html
+- Office of the Comptroller of the Currency, Board of Governors of the Federal Reserve System, & Federal Deposit Insurance Corporation. (2019). Regulatory capital rule: Capital simplification for qualifying community banking organizations. *Federal Register, 84*, 61776-61804. https://www.federalregister.gov/documents/2019/11/13/2019-23472/regulatory-capital-rule-capital-simplification-for-qualifying-community-banking-organizations
+- Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*(85), 2825-2830. https://jmlr.org/papers/v12/pedregosa11a.html
+- Platt, J. C. (1999). Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. In A. J. Smola, P. Bartlett, B. Schölkopf, & D. Schuurmans (Eds.), *Advances in large margin classifiers* (pp. 61-74). MIT Press.
+- Polars Developers. (2025). *Polars* (Version 1.35.2) [Computer software]. https://pypi.org/project/polars/1.35.2/
+- Saito, T., & Rehmsmeier, M. (2015). The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLOS ONE, 10*(3), Article e0118432. https://doi.org/10.1371/journal.pone.0118432
+- State Bank of Vietnam. (2016). *Circular No. 41/2016/TT-NHNN prescribing capital adequacy ratios for banks and foreign bank branches*. https://thuvienphapluat.vn/van-ban/Tien-te-Ngan-hang/Thong-tu-41-2016-TT-NHNN-ty-le-an-toan-ngan-hang-chi-nhanh-ngan-hang-nuoc-ngoai-336513.aspx
+- The Investor. (2022, October). Central bank put Saigon Commercial Bank under special control. https://theinvestor.vn/central-bank-put-saigon-commercial-bank-under-special-control-d2163.html
+- Tukey, J. W. (1977). *Exploratory data analysis*. Addison-Wesley.
+- Vietstock. (2015, October). Over $500mn in liquidity reserved for three lenders acquired by Vietnam cbank. https://en.vietstock.vn/2015/10/over-$500mn-in-liquidity-reserved-for-three-lenders-acquired-by-vietnam-cbank-37-218944.htm
+- VnEconomy. (2024, October 18). Two weak banks transferred to Vietcombank, MB Bank. https://en.vneconomy.vn/two-weak-banks-transfered-to-vietcombank-mb-bank.htm
+- VnEconomy. (2025, January 18). GPBank and DongA Bank transferred to VPBank and HDBank. https://en.vneconomy.vn/gpbank-and-donga-bank-transferred-to-vpbank-and-hdbank.htm
+- Zaharia, M., Xin, R. S., Wendell, P., Das, T., Armbrust, M., Dave, A., Meng, X., Rosen, J., Venkataraman, S., Franklin, M. J., Ghodsi, A., Gonzalez, J., Shenker, S., & Stoica, I. (2016). Apache Spark: A unified engine for big data processing. *Communications of the ACM, 59*(11), 56-65. https://doi.org/10.1145/2934664
+
+Software: Polars, pandas, PyArrow, delta-rs (deltalake), PySpark, scikit-learn and matplotlib, at the pinned versions in `requirements.txt`.
+
+**AI assistance:** parts of this code and of the report text were drafted with Claude (Anthropic), then reviewed,
+run and modified by the author. All reported numbers come from the author's own runs.
