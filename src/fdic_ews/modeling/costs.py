@@ -2,12 +2,17 @@
 
 CFN (missed failure) comes from the data: the FDIC's estimated loss to the
 deposit-insurance fund (``COST`` in the failures table, $ thousands) of the
-failures whose label falls in the development period. Only a share ``alpha``
+failures dated from the start of training to the day before the test period
+(31/03/1984 - 30/03/2009 in the final run: 2,342 failures, 2,312 with a COST).
+This window is the development period plus the 2008 gap year; none of these
+failures is the label of a test row. A check that keeps only failures up to
+31/12/2007 (2,266 with a COST, median 8,368 vs 8,693 thousand USD) leaves the
+chosen threshold unchanged (0.055). Only a share ``alpha``
 of that loss is assumed avoidable by an earlier supervisory action, and a
 failing bank contributes several positive bank-quarters, so the cost of one
 missed positive row is
 
-    CFN_row = alpha * median(COST of development failures) / mean positive rows per failed bank
+    CFN_row = alpha * median(COST of failures before the test period) / mean positive rows per failed bank
 
 so that missing a failing bank in every one of its positive quarters costs
 alpha * median loss. CFP (false alarm = one targeted examination) has no

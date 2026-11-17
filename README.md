@@ -2,7 +2,7 @@
 
 **Course:** BFT65B Big Data Analytics in Finance, National Economics University (NEU)
 **Student:** Phạm Anh Chi (11230937) · **Instructor:** Dr. Nguyen Tuan Long
-**Report:** `report/BFT65B_final_report.pdf` (link to this repository on page 1)
+**Report:** submitted separately as PDF/DOCX (20 pages + appendix); page 1 links to this repository
 
 The repository builds a reproducible pipeline on public FDIC data:
 FDIC BankFind API → **Bronze** (raw JSON) → **Silver** (typed, deduplicated Parquet)
@@ -14,16 +14,19 @@ imbalanced early-warning model.
 > Failures and Institutions tables. Development period 1984Q1-2007Q4, gap 2008, test
 > period 2009Q1-2025Q2 (see `config/config.yaml`, `reports/tables/report_page1_facts.md`).
 >
-> Status: Parts 1-5 implemented (acquisition, storage + benchmark, data quality and exits,
+> Status: complete. Parts 1-6 are implemented and were run end to end on Colab on
+> 7 November 2026 (acquisition, storage + benchmark, data quality and exits,
 > Polars/Pandas/PySpark processing with execution plans, leak-free features and selection,
-> models with time-aware validation, Spark MLlib demo, cost-based threshold, single test).
+> models with time-aware validation, Spark MLlib demo, cost-based threshold, single test,
+> scoring of the latest quarter). Every number in the report comes from `reports/`.
 
 ## Repository layout
 
 ```
 config/config.yaml          single source of truth: fields, dates, split, thresholds
 pipeline.py                 CLI: probe | ingest | silver | gold | benchmark | audit | leakage |
-                            features | bench3 | select | freedman | model | mllib | facts | all
+                            features | bench3 | select | freedman | model | mllib | predict |
+                            facts | check | all
 src/fdic_ews/
   ingestion/fdic_client.py  HTTP client: retries, backoff, pagination, completeness check
   ingestion/fdic_ingestion.py  Bronze writer + manifest (lineage, resumable)
@@ -46,6 +49,7 @@ src/fdic_ews/
   modeling/costs.py         CFN from FDIC failure COST, CFP assumption, cost curve
   modeling/metrics.py       PR-AUC, Recall@top-k% per quarter, confusion at a threshold
   modeling/mllib_demo.py    same logistic regression in Spark MLlib and scikit-learn
+  modeling/predict.py       scores one quarter with the frozen model (no refitting)
   quality/sanity.py         27 logic checks on the real outputs (keys, label, split, features,
                             single test look, report numbers vs data)
   reporting/facts.py        page-1 facts (download date, rows, periods, failures)
@@ -64,7 +68,7 @@ pip install -r requirements.txt
 
 python pipeline.py probe                              # 1. are all configured fields served by the API?
 python pipeline.py ingest --start 2023Q1 --end 2023Q4 # 2. trial download (4 quarters)
-python pipeline.py ingest                             # 3. full range in config.yaml (~1 h, resumable)
+python pipeline.py ingest                             # 3. full range in config.yaml (13 min on Colab, resumable)
 python pipeline.py all                                # 4. silver -> gold -> benchmark -> audit -> leakage ->
                                                       #    features -> bench3 -> select -> freedman -> model -> mllib -> facts
 python pipeline.py check                              # 5. logic checks on the real outputs -> sanity_checks.md
@@ -94,7 +98,7 @@ RESTYPE = FAILURE), `merger_or_other_exit` (inactive, not failed; CHANGEC1 code 
 label. Only failures create positive labels; mergers are 0. Tables: `gold_exit_types.csv`,
 `gold_exit_changec1_codes.csv`, `gold_failure_report_gap.csv`.
 
-## Leakage controls implemented so far
+## Leakage controls
 
 1. Label `target_fail_4q = 1` iff the bank fails in (repdte, repdte + 4 quarters].
 2. Purged temporal split: rows whose label window crosses a split boundary are dropped.
@@ -104,7 +108,7 @@ label. Only failures create positive labels; mergers are 0. Tables: `gold_exit_t
 6. All learned preprocessing (near-constant filter, IQR fences, medians, scales) is inside a
    scikit-learn `ColumnTransformer` fitted on train; `pipeline.py leakage` proves it numerically.
 
-## Module 3: features
+## Part 3-4: features and selection
 
 `data/gold/features.parquet` holds 50 features per bank-quarter (dictionary with formulas and
 source fields: `reports/tables/feature_dictionary.csv`). Year-to-date income items are
@@ -117,21 +121,43 @@ uses row-based windows, the only window type with identical semantics in all fou
 proves the engines agree on the same workload, not that they reproduce the production features,
 whose gap-aware windows are tested separately (`test_rolling_window_is_gap_aware_and_ignores_nulls`).
 
-## Module 5: models, threshold and the single test
+`python pipeline.py select` reduces the 50 candidates to 6 with a four-stage funnel fitted on the
+training window (variance filter, F-test/mutual information + collinearity, L1 stability selection,
+permutation importance on validation): Texas ratio, its 12-month SD and quarterly change, the
+12-month SD of ROA, equity/assets and the Tier 1 leverage ratio (`module4_feature_selection.md`).
+`python pipeline.py freedman` shows why selection must stay inside the training data: on pure noise,
+selecting before CV gives AUC 0.724 (N = 200), selecting inside each fold gives 0.498
+(`freedman_simulation.md`).
+
+## Part 5-6: models, threshold, the single test and scoring
 
 `python pipeline.py model` compares a baseline (logistic regression on four classic ratios)
 with logistic regression, random forest and gradient boosting (no re-weighting, class
 weights, undersampling) by expanding-window, purged cross-validation inside 1984-2007
 (`model_cv_summary.csv`). The chosen model is fitted on 1984-1992, Platt-calibrated on
 1993-2007, and its alarm threshold minimises the expected cost on 1993-2007, with the cost of
-a missed failure estimated from the FDIC `COST` field of development-period failures
-(`model_costs.json`, sensitivity in `model_cost_sensitivity.csv`). The choice is frozen in
+a missed failure estimated from the FDIC `COST` field of the failures before the test period
+(31/03/1984-30/03/2009; `model_costs.json`, sensitivity in `model_cost_sensitivity.csv`). The choice is frozen in
 `model_choice.json` before the test window 2009Q1-2025Q2 is scored; every test evaluation is
 appended to `data/gold/_test_evaluations.jsonl`. Results: `reports/module5_models.md`.
 `python pipeline.py predict [--quarter 2026Q2]` scores one quarter (default: the latest) with
 the frozen model in `data/models/ews_model.joblib`, without refitting.
 `python pipeline.py mllib` fits the same logistic regression in Spark MLlib and
 scikit-learn on development data and reports runtime and agreement.
+
+## Key results of the final run (7 November 2026)
+
+| Item | Result | Source |
+|---|---|---|
+| Rows / banks | 1,682,616 Financials rows, 24,064 banks, 170 quarters | `report_page1_facts.md` |
+| Failures | 4,117 records, 3,036 used (RESTYPE = FAILURE, unique CERT) | `module2_data_quality.md` |
+| Development / test | 2,299 / 501 failed banks; test has 1,779 positive rows | `dq_split_summary.csv` |
+| Storage | Parquet zstd 154.5 MB vs CSV 457.3 MB; filtered query 57.5x faster | `storage_benchmark.md` |
+| Processing | Polars lazy 2.69 s, 9.1x faster than pandas; PySpark same result | `processing_benchmark.md` |
+| Model (chosen on CV) | random forest, CV PR-AUC 0.305 vs 0.194 baseline (fold SD 0.18) | `model_cv_summary.csv` |
+| Test (evaluated once) | PR-AUC 0.661 vs 0.617 baseline; 457/501 failed banks flagged | `model_test_results.csv` |
+| Cost on test | 334.7 M USD vs 1,025.7 M USD without a model (alpha 0.25, CFP 50k) | `model_costs.json` |
+| Limitation | none of the 9 failures of 2023-2025 flagged at the threshold | `model_test_detection_by_fail_year.csv` |
 
 ## Data source
 
