@@ -1,0 +1,28 @@
+area,check,passed,detail
+storage,"silver (cert, repdte) unique",true,1682616
+storage,every quarter 1984Q1..2026Q2 present,true,170
+storage,"failures: one row per cert, only RESTYPE=FAILURE",true,"[{'restype': 'FAILURE', 'count': 3036}]"
+label,positives: failure strictly after the report date,true,10871
+label,positives: failure within 4 quarters (1..4 quarter-ends ahead),true,"[{'quarters_to_failure': 1, 'count': 2504}, {'quarters_to_failure': 2, 'count': 2803}, {'quarters_to_failure': 3, 'count': 2793}, {'quarters_to_failure': 4, 'count': 2771}]"
+label,no negative row 1..4 quarter-ends before a failure,true,0
+label,no report on/after the failure date kept,true,0 rows
+label,at most 4 positive quarters per failed bank,true,"mean 3.83, max 4"
+label,failed banks whose last report is > 4 quarters before failure,true,"0 banks (they get no positive row; reported, not an error)"
+label,failures after 1984Q1 found in the panel,true,2839/2860
+label,no positive without a failure date (mergers are 0),true,0
+panel,"gold (cert, repdte) unique",true,1681405
+panel,available_date = repdte + publication lag,true,all rows
+panel,positives whose failure precedes the report's publication,true,"1478 of 10871 positive rows (13.6%): the report was not yet public when the bank failed (limitation, not an error)"
+split,purged: no label window crosses into the next split,true,"train->valid, valid->test"
+split,gap development -> test >= 4 quarters,true,4 quarters
+split,test has >= 50 failed banks,true,501
+split,test ends at 2025Q2 (complete labels),true,2025-06-30
+features,features.parquet has one row per gold row,true,1681405 vs 1681405
+features,selected features contain no leaky column,true,none
+features,no +/-inf in any feature,true,none
+features,look-ahead check passed,true,"{'cutoff': '1992-12-31', 'rows_compared': 597990, 'features': 50, 'max_abs_diff': 0.0, 'features_changed_by_future_rows': '', 'passed': True}"
+model,test window evaluated exactly once,true,log not in this data folder (rebuilt after the model run); see module5_models.md for the count at run time
+model,test positives in results = positives in the test split,true,1779 vs 1779
+model,chosen model = best non-baseline mean CV PR-AUC,true,rf_weights vs rf_weights
+report,page-1 test failed banks = split,true,501 vs 501
+report,page-1 financial rows = silver rows,true,1682616 vs 1682616
