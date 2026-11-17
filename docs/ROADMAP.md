@@ -1,72 +1,52 @@
-# Project roadmap (6 Nov - 26 Nov 2026, deadline 23:00 on 26/11)
+# Project log (6 Nov - 26 Nov 2026, deadline 23:00 on 26/11)
 
-Rule for the whole project: **every number in the report comes from a file in
-`reports/tables/` produced by a script in this repository.** Numbers in the early
-outline (for example "$42.8M saved", "2.4% failure spike", "35% cost reduction",
-"8x faster", ">75% smaller", "150 -> 20 features", "99.2% accuracy") were
-placeholders, not results, and must not appear unless your own run produces them.
+Rule for the whole project: every number in the report comes from a file in
+`reports/` produced by a script in this repository.
 
-## Timeline
+The instructor's suggested plan was week 1 for Parts 1-2, week 2 for Parts 3-4 and
+week 3 for Parts 5-6, the report and a final check of the repository. The table below
+records when each part was actually done, with the commit that holds the evidence.
 
-| Dates | Part | Work | Evidence produced |
+## What was done, and when
+
+| Dates | Part | Work | Evidence |
 |---|---|---|---|
-| 6-8 Nov | 1 | `probe`, trial ingest of 4 quarters, then full ingest 2001Q1-2025Q2 | `bronze/_manifest.jsonl`, rows per quarter |
-| 8-9 Nov | 1 | `silver`, `gold`, `benchmark` | `storage_benchmark.md/.csv/.png`, `gold_label_counts_by_year.csv` |
-| 9-11 Nov | 2 | `audit`, `leakage`; read every table and decide | `module2_data_quality.md`, `module2_leakage_checks.md` |
-| 11-15 Nov (done 6 Nov) | 3 | CAMELS ratios in Polars Lazy; de-cumulate YTD income; QoQ, 4q rolling mean/std; PySpark window demo; Pandas vs Polars vs PySpark benchmark | `processing_benchmark.csv`, feature dictionary |
-| 15-18 Nov | 4 | Selection funnel fitted inside CV folds; Freedman simulation (select-before-split vs after) | funnel table, simulation table |
-| 18-21 Nov | 5 | Purged walk-forward CV; LR / RF / GBM; class weights vs undersampling vs SMOTE (train fold only); PR-AUC, Recall@top-k; cost-based threshold | metric tables, PR curves, cost curve |
-| 21-22 Nov | 6 | Serialize the fitted pipeline (`joblib`), `predict.py` that scores a new quarter, README final | `models/`, end-to-end rerun log |
-| 22-25 Nov | - | Write the report (<= 20 pages + <= 10 appendix), figures, citations incl. AI use | PDF |
-| 25-26 Nov | - | Fresh clone -> run -> check numbers match report; make repo public; final commit before 23:00 | |
+| 6 Nov | 1 | `probe`, trial ingest of a few quarters, Bronze/Silver/Gold layers, storage benchmark | `bronze/_manifest.jsonl`, `storage_benchmark.md` |
+| 6 Nov | 2 | `audit`, `leakage`; failures vs. assistance transactions; exit types | `module2_data_quality.md`, `module2_leakage_checks.md` |
+| 6 Nov | 3 | CAMELS features in Polars Lazy (YTD income to quarterly flows, gap-aware rolling windows); pandas vs Polars vs PySpark benchmark | `processing_benchmark.md`, `feature_dictionary.csv`, `features_lookahead_check.csv` |
+| 6 Nov | - | Scope aligned with the exam brief: Financials 1984Q1-2026Q2 for all banks, full Failures and Institutions, exam split | `config/config.yaml` |
+| 7 Nov | 1-3 | Full download (01:23-01:37 UTC) and full run on Colab; two data-quality fixes; pinned `requirements.txt` | `reports/`, `requirements.txt` |
+| 7 Nov | 4 | Four-stage selection funnel inside the training data; Freedman simulation | `module4_feature_selection.md`, `freedman_simulation.md` |
+| 7 Nov | 5 | Time-aware CV with purging; baseline vs LR / RF / gradient boosting; class weights vs undersampling; Platt calibration; cost-based threshold; Spark MLlib demo; single logged test evaluation | `module5_models.md`, `model_*.csv` |
+| 7 Nov | 6 | `pipeline.py predict` scores the latest quarter with the frozen model; Colab notebook with outputs | `predict_latest_quarter.md`, `notebooks/` |
+| 10 Nov | - | `pipeline.py check`: logic checks on the real outputs; Gold asserts join cardinality | `pipeline.py check` |
+| 12-13 Nov | - | Report written (20 pages + appendix), sources cited in the report and in the README | report (PDF/DOCX) |
+| before 26 Nov | - | Fresh clone, rerun of the checks, repository kept public until grades are released | |
 
-## Decisions that must be made from measured data
+## Decisions taken from measured data
 
-1. **Split dates.** Bank failures cluster in 2008-2012; after 2015 there are only a
-   handful per year. Open `reports/tables/gold_label_counts_by_year.csv` before fixing
-   `split:` in `config.yaml`. A test window with ~15 positive banks gives very noisy
-   PR-AUC. Options: (a) train 2001-2012 / valid 2013-2015 / test 2016-2024 (default);
-   (b) rolling-origin evaluation (train up to year Y, test Y+1, repeat) and report the
-   mean and spread. Report positives per split in the paper either way.
-2. **Label horizon.** 4 quarters by default (`gold.label_horizon_quarters`). A 2-quarter
-   horizon is easier but less useful for supervisors; justify the choice.
-3. **Missing-value strategy.** Use `dq_missingness.csv`: structural gaps (item not on the
-   form in some years) are handled by feature choice, informative gaps keep a missing flag.
-4. **Outliers.** Compare `train_iqr_flag_pct` with `train_gauss_flag_pct`, and the failure
-   rate among flagged rows. If flagged rows fail more often, clip, do not delete.
+1. **Split dates.** Train 1984-1992, validation 1993-2007, gap 2008, test 2009Q1-2025Q2,
+   chosen after reading `gold_label_counts_by_year.csv`: the test window has 501 failed
+   banks (the exam requires at least 50).
+2. **Label horizon.** 4 quarters, as the exam requires: y = 1 if the bank fails in (q, q + 4].
+3. **Missing values.** Structural gaps (item not collected in some years) are handled by the
+   variance filter; informative gaps keep a missing-value flag (`dq_missingness.csv`).
+4. **Outliers.** Rows outside the Tukey fences fail far more often, so values are clipped at
+   limits learned on train, never deleted (`dq_outliers_iqr_vs_gauss.csv`).
 
-## Technical corrections to keep in mind for Modules 3-5
+## Technical notes
 
 * Call Report income items (NETINC, INTINC, EINTEXP, NONII, NONIX, ELNATR, NTLNLS) are
-  **year-to-date**. Quarterly flow = YTD(q) - YTD(q-1) within the same year; annualise
-  before dividing by assets.
-* A 4-quarter rolling window in PySpark is `rowsBetween(-3, 0)` (current + 3 previous),
-  not `(-4, 0)`, which is 5 rows. Row-based windows are wrong when a bank skips a quarter;
-  use `rangeBetween` on an integer quarter index (year*4 + quarter) or Polars
-  `rolling(index_column=..., period="12mo")`.
-* "Non-interest expense / total assets" is an efficiency proxy, not a cost-to-income ratio
-  (that is non-interest expense / (net interest income + non-interest income)).
-* `t* = CFP / (CFP + CFN)` is the Bayes-optimal threshold only for **calibrated**
-  probabilities. Class weights and SMOTE distort probabilities, so either calibrate on the
-  validation window or choose the threshold by minimising expected cost on validation,
-  then report the cost on test. CFN/CFP values are assumptions: run a sensitivity table.
-* SMOTE, scaling, imputation and feature selection go inside the CV fold
-  (`imblearn.pipeline.Pipeline`), never before the split.
-* Banks that disappear through mergers are labelled 0; mention this as a limitation.
-* The `institutions` table is a snapshot taken at download time; static attributes such
-  as charter class may have changed. `active` and `endefymd` are excluded as leaky.
-
-## Report structure (suggested page budget)
-
-| Pages | Section | Main evidence |
-|---|---|---|
-| 1 | Title, student info, GitHub URL | |
-| 1 | Executive summary, problem, contributions | key measured KPIs only |
-| 3 | Part 1 Ingestion and storage | architecture diagram, manifest stats, storage benchmark |
-| 3 | Part 2 Data quality | duplicates, missingness table + heat-map, IQR vs 3 sd, LOF, leakage proof |
-| 3 | Part 3 Processing and features | CAMELS mapping table, processing benchmark |
-| 2 | Part 4 Feature selection | funnel, Freedman simulation |
-| 4 | Part 5 Model | split table, PR curves, metrics, cost curve and threshold |
-| 1 | Part 6 Reproducibility and governance | pipeline diagram, rerun instructions |
-| 1-2 | Limitations, conclusion | |
-| 1 | References (incl. FDIC API, libraries, AI tool use) | |
+  year-to-date. Quarterly flow = YTD(q) - YTD(q-1) within the same year, only when the
+  previous report is exactly one quarter earlier; annualised before dividing by assets.
+* Production rolling features use a time window (t - 12 months, t] on a quarter index, so
+  they do not stretch across missing quarters. The four-engine benchmark uses the row
+  window `rowsBetween(-3, 0)` (current + 3 previous) because it behaves the same in all engines.
+* `t* = CFP / (CFP + CFN)` is optimal only for calibrated probabilities, so the threshold
+  is chosen by minimising expected cost on the validation window and reported once on test,
+  with a sensitivity table for the cost assumptions.
+* Scaling, imputation, clipping and feature selection are fitted inside the training data
+  only (scikit-learn `Pipeline`), never before the split.
+* Banks that disappear through mergers are labelled 0 (exam rule); this is a limitation.
+* The `institutions` table is a snapshot taken at download time; `active`, `endefymd`
+  and `changec1` are blocked as features.

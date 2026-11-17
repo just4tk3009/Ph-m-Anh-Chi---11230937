@@ -53,7 +53,7 @@ tools/make_synthetic_bronze.py  SYNTHETIC data for smoke tests only (never repor
 tests/                      pytest suite (runs offline on synthetic data)
 notebooks/BFT65B_full_run_2026-11-07.ipynb  the Colab run behind reports/ (with outputs)
 reports/tables, reports/figures   generated evidence used in the report
-docs/ROADMAP.md             plan for all six parts and the report
+docs/ROADMAP.md             project log: what was done when, and the decisions taken
 ```
 
 ## Reproduce
