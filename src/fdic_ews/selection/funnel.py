@@ -8,6 +8,7 @@ Stage 2  supervised     ANOVA F-test (p < alpha) AND mutual information > 0, the
                         collinearity pruning: of any pair with |Spearman rho| > 0.85
                         keep the one with the higher mutual information
 Stage 3  embedded       L1-penalised logistic regression, *stability selection*
+                        (after Meinshausen & Buhlmann, 2010)
                         over expanding-window folds inside the train window
                         (C chosen by mean inner-fold PR-AUC); keep features
                         selected in >= ``min_fold_share`` of folds

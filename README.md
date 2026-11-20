@@ -196,6 +196,11 @@ Sources used in the code and in the report (APA 7; the same list as the report's
 - VnEconomy. (2025, January 18). GPBank and DongA Bank transferred to VPBank and HDBank. https://en.vneconomy.vn/gpbank-and-donga-bank-transferred-to-vpbank-and-hdbank.htm
 - Zaharia, M., Xin, R. S., Wendell, P., Das, T., Armbrust, M., Dave, A., Meng, X., Rosen, J., Venkataraman, S., Franklin, M. J., Ghodsi, A., Gonzalez, J., Shenker, S., & Stoica, I. (2016). Apache Spark: A unified engine for big data processing. *Communications of the ACM, 59*(11), 56-65. https://doi.org/10.1145/2934664
 
+Cited only in code comments (not in the report):
+
+- scikit-learn developers. (n.d.). *Common pitfalls and recommended practices: Data leakage*. Retrieved November 20, 2026, from https://scikit-learn.org/stable/common_pitfalls.html
+- Strobl, C., Boulesteix, A.-L., Zeileis, A., & Hothorn, T. (2007). Bias in random forest variable importance measures: Illustrations, sources and a solution. *BMC Bioinformatics, 8*, Article 25. https://doi.org/10.1186/1471-2105-8-25
+
 Software: Polars, pandas, PyArrow, delta-rs (deltalake), PySpark, scikit-learn and matplotlib, at the pinned versions in `requirements.txt`.
 
 **AI assistance:** parts of this code and of the report text were drafted with Claude (Anthropic), then reviewed,

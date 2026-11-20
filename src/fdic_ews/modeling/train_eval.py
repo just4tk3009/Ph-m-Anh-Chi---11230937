@@ -3,7 +3,7 @@
 Protocol (every choice is made on the DEVELOPMENT period 1984-2007):
 
 1. **Candidates.** A simple baseline (logistic regression on four classic CAMELS
-   ratios, no re-weighting) against logistic regression, random forest and
+   ratios, no re-weighting; after Martin, 1977) against logistic regression, random forest (Breiman, 2001) and
    histogram gradient boosting on the features chosen in Module 4. For
    gradient boosting three imbalance strategies are compared: none, class
    weights, random undersampling of the training fold. (SMOTE is not used:
@@ -13,7 +13,7 @@ Protocol (every choice is made on the DEVELOPMENT period 1984-2007):
    a training row is used only if its 4-quarter label window ended before the
    validation window starts (purging). All preprocessing sits inside the
    sklearn Pipeline, so it is refitted on each training fold.
-3. **Model choice** = best mean CV PR-AUC (Recall@top-k reported next to it).
+3. **Model choice** = best mean CV PR-AUC (Saito & Rehmsmeier, 2015) (Recall@top-k reported next to it).
 4. **Final fit** of every candidate on the train window (1984-1992, purged);
    Platt calibration and the cost-minimising alarm threshold are fitted on the
    validation window (1993-2007). Costs: see ``costs.py``.

@@ -14,9 +14,9 @@ Checks
    -> evidence for an MCAR / MAR / MNAR / structural classification.
 5. Zero- and near-zero-variance columns, decided on the TRAIN window only.
 6. Accounting-identity / domain-rule violations.
-7. Outliers on core ratios: Tukey IQR fences (fitted on train) vs mean +/- 3 sd,
+7. Outliers on core ratios: Tukey (1977) IQR fences (fitted on train) vs mean +/- 3 sd,
    skewness/kurtosis, and the failure rate among flagged rows.
-8. Multivariate outliers: Local Outlier Factor fitted on a train sample,
+8. Multivariate outliers: Local Outlier Factor (Breunig et al., 2000) fitted on a train sample,
    applied (novelty mode) to validation and test.
 9. Label distribution per split (class imbalance).
 """

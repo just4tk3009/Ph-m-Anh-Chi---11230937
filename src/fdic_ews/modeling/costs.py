@@ -20,7 +20,7 @@ counterpart in the FDIC data and is an explicit assumption; both enter a
 sensitivity table.
 
 Threshold rule. ``t* = CFP / (CFP + CFN)`` is Bayes-optimal only for
-calibrated probabilities. Probabilities are therefore Platt-calibrated on the
+calibrated probabilities (Elkan, 2001). Probabilities are therefore Platt-calibrated (Platt, 1999) on the
 validation window, and the threshold actually used is the one that minimises
 the realised cost on that window; ``t*`` is reported next to it.
 """
